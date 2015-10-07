@@ -6,11 +6,12 @@
 - 3 funkcje rekurencyjne + 3 makra rekurencyjne w Lispie per 1 osoba.
 - 3 predykaty rekurencyjne w Prologu.
 - Za każdy tydzień opóźnienia 0.5 oceny w dół.
-- Można się zwolnić z egzaminu jeśli dodatkowo osoba napisze dodatkowo:
+- Można się zwolnić z egzaminu jeśli dodatkowo osoba napisze:
   - 2 funkcje,
   - 2 makra,
   - 2 predykaty rekurencyjne.
 - Ocena końcowa to średnia oceny z projektu i egzaminu.
+- Z tego co pamiętam, to żeby mieć ocenę **> 3** i móc myśleć o zwolnieniu się z egzaminu, to trzeba wybrać temat projektu z Prologa dot. systemu eksperckiego.
 
 ### Terminy
 Szczegóły dot. terminów i warunków zaliczenia:
@@ -34,3 +35,19 @@ Nr zajęć | Data         | Opis deadline'u
 **15**   |**12.01.2016**| **System ekspercki w Prologu**
 16       | 19.01.2016   |
 17       | 26.01.2016   |
+
+### Tematy projektu (do wyboru)
+Lista dostępnych tematów z projektu z Lispa:
+
+1. B-Drzewa
+2. Bazy danych z elementami zawierającymi zbiory
+3. Automaty skończone i automaty ze stosem
+4. Operacje na macierzach k-wymiarowych
+5. Różniczkowanie symboliczne
+6. Operacje na wielomianach
+7. Kalkulator
+8. Sortowanie
+9. System ekspercki
+10. Całkowanie symboliczne
+11. Tłumaczenie zdań z polskiego na inny język
+12. Tłumaczenie zdań z angielskiego na inny język
