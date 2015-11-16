@@ -72,3 +72,50 @@
 ;     cur)    ; return value
 ;  ;empty body
 ;  )
+
+; Factorial
+
+(defmacro macro-factorial (n)
+    "Macro factorial"
+    (if (= 0 n)
+        '1
+        (let ((m (1- n)))
+            `(* ,n (macro-factorial ,m)))))
+
+(defun factorial (n)
+    "Function factorial"
+    (case n
+        (0 1)
+        (10 (macro-factorial 10))
+        (otherwise (* n (factorial (1- n))))))
+
+; Taylor series for sinus
+
+(defun term (n radians)
+"n-th term of Taylor sine series"
+    (*
+        (/
+            (expt radians (+ (* 2 n) 1))
+            (factorial (+ (* 2 n) 1))
+        )
+        (expt -1 n)
+    )
+)
+
+(defun reduce-angle (x)
+"Reduce angle to [-pi, pi] range"
+    (- x (* (round (/ x (* 2 pi))) 2 pi)))
+
+(defun good-enough? (current next epsilon)
+"Checks if result is satisfying"
+    (< (abs (- current next)) epsilon))
+
+(defun sine-iter (radians n current next epsilon)
+"Recursive function for Taylor series sum"
+    (if (good-enough? current next epsilon)
+        next
+        (sine-iter radians (+ n 1) next (+ next (term (+ n 1) radians)) epsilon)))
+
+(defun taylor-sine (radians epsilon)
+"First call for Taylor series"
+    (sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) epsilon))
