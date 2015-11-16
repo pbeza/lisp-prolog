@@ -3,10 +3,11 @@
 (defvar *separators* (list '+ '- '* '/) "Default operators for the math macro") 
 
 (defun remove-brackets (lst)
-    "Reduses lists with just one item to the item itself"
-    (do ((result lst (car result)))
-        ((or (not (consp result))
-        (not (null (cdr result)))) result)))
+    "Reduces lists with just one item to the item itself"
+    (if (or (not (consp lst))
+            (not (null (cdr lst))))
+        lst
+        (remove-brackets (car lst))))
 
 (defun separate-list (lst separator test)
     "Returns list of sub-sequences defined by separator"
@@ -63,4 +64,13 @@
 
 (defun calc (infix-expr)
     "Calculate result of given expression"
-    (eval (infix->prefix infix-expr '(+ - * /))))
+    (eval (infix->prefix infix-expr '(+ - * / ^))))
+
+; Fibonacci(10)
+;(do ((n 0 (1+ n))  ;declares n, initially 0, n+1 each subsequent iteration)
+;     (cur 0 next)   ;declares cur, initially 0, then old value of next
+;     (next 1 (+ cur next))) ;declares next, initially 1, then the sum of (the old) cur and next
+;    ((= 10 n) ;end condition (ends when n = 10)
+;     cur)    ; return value
+;  ;empty body
+;  )
