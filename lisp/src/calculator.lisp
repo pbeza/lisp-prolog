@@ -115,7 +115,7 @@
 
 (defun sine-iter (radians n val)
     "Recursive function for Taylor series sum"
-    (if (>= n 10)
+    (if (>= n 16)
         val
         (sine-iter radians (+ n 1) (+ val (term (+ n 1) radians)))))
 
@@ -127,13 +127,13 @@
 
 (defmacro macro-sine-iter (radians n val)
     "Recursive macro for Taylor series sum"
-    (if (>= n 10)
+    (if (>= n 16)
         val
         `(macro-sine-iter ,radians ,(+ n 1) ,(+ val (term (+ n 1) radians)))))
 
-(defun taylor-sine (radians)
-    "First call for Taylor series"
-    (macro-sine-iter radians -1 0))
+;(defun macro-taylor-sine (radians)
+;    "First call for Taylor series"
+;    (macro-sine-iter radians -1 0))
 
 ;-------------------------------------
 ; FIBONACCI
