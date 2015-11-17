@@ -131,9 +131,9 @@
         next
         `(macro-sine-iter ,radians ,(+ n 1) ,next ,(+ next (term (+ n 1) radians)) ,(- iters 1))))
 
-(defun taylor-sine (radians iters)
-    "First call for Taylor series"
-    (macro-sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
+;(defun macro-taylor-sine (radians iters)
+;    "First call for Taylor series"
+;    (macro-sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
 
 ;-------------------------------------
 ; FIBONACCI
