@@ -133,7 +133,7 @@
 
 (defmacro macro-taylor-sine (radians)
     "First call for Taylor series"
-    `(macro-sine-iter ,radians -1 0))
+    `(macro-sine-iter ,(reduce-angle radians) -1 0))
 
 ;-------------------------------------
 ; FIBONACCI
