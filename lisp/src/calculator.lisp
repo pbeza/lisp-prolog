@@ -131,9 +131,9 @@
         val
         `(macro-sine-iter ,radians ,(+ n 1) ,(+ val (term (+ n 1) radians)))))
 
-;(defun macro-taylor-sine (radians)
-;    "First call for Taylor series"
-;    (macro-sine-iter radians -1 0))
+(defmacro macro-taylor-sine (radians)
+    "First call for Taylor series"
+    `(macro-sine-iter ,radians -1 0))
 
 ;-------------------------------------
 ; FIBONACCI
