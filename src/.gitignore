@@ -1,0 +1,5 @@
+# From: https://github.com/github/gitignore
+
+*.FASL
+*.fasl
+*.lisp-temp
