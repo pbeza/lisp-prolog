@@ -1,5 +1,11 @@
 ; Symbolic calculator.
 
+;-------------------------------------
+; INFIX -> PREFIX
+;-------------------------------------
+
+; Infix to prefix translator
+
 (defvar *separators* (list '+ '- '* '/) "Default operators for the math macro") 
 
 (defun remove-brackets (lst)
@@ -64,16 +70,11 @@
     "Calculate result of given expression"
     (eval (infix->prefix infix-expr *separators*)))
 
-; Fibonacci(10)
-;(do ((n 0 (1+ n))  ;declares n, initially 0, n+1 each subsequent iteration)
-;     (cur 0 next)   ;declares cur, initially 0, then old value of next
-;     (next 1 (+ cur next))) ;declares next, initially 1, then the sum of (the old) cur and next
-;    ((= 10 n) ;end condition (ends when n = 10)
-;     cur)    ; return value
-;  ;empty body
-;  )
+;-------------------------------------
+; FACTORIAL
+;-------------------------------------
 
-; Factorial
+; Factorial - recursive macro
 
 (defmacro macro-factorial (n)
     "Macro factorial"
@@ -82,6 +83,8 @@
         (let ((m (1- n)))
             `(* ,n (macro-factorial ,m)))))
 
+; Factorial - recursive function
+
 (defun factorial (n)
     "Function factorial"
     (case n
@@ -89,10 +92,14 @@
         (10 (macro-factorial 10))
         (otherwise (* n (factorial (1- n))))))
 
-; Taylor series for sinus
+;-------------------------------------
+; TAYLOR SERIES FOR SINUS
+;-------------------------------------
+
+; Taylor series for sinus - recursive function
 
 (defun term (n radians)
-"n-th term of Taylor sine series"
+    "n-th term of Taylor sine series"
     (*
         (/
             (expt radians (+ (* 2 n) 1))
@@ -103,19 +110,40 @@
 )
 
 (defun reduce-angle (x)
-"Reduce angle to [-pi, pi] range"
+    "Reduce angle to [-pi, pi] range"
     (- x (* (round (/ x (* 2 pi))) 2 pi)))
 
-(defun good-enough? (current next epsilon)
-"Checks if result is satisfying"
-    (< (abs (- current next)) epsilon))
-
-(defun sine-iter (radians n current next epsilon)
-"Recursive function for Taylor series sum"
-    (if (good-enough? current next epsilon)
+(defun sine-iter (radians n current next iters)
+    "Recursive function for Taylor series sum"
+    (if (<= 0 iters)
         next
-        (sine-iter radians (+ n 1) next (+ next (term (+ n 1) radians)) epsilon)))
+        (sine-iter radians (+ n 1) next (+ next (term (+ n 1) radians)) (- iters 1))))
 
-(defun taylor-sine (radians epsilon)
-"First call for Taylor series"
-    (sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) epsilon))
+(defun taylor-sine (radians iters)
+    "First call for Taylor series"
+    (sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
+
+; Taylor series for sinus - recursive macro
+
+(defmacro macro-sine-iter (radians n current next iters)
+    "Recursive function for Taylor series sum"
+    (if (<= 0 iters)
+        next
+        `(macro-sine-iter ,radians ,(+ n 1) ,next ,(+ next (term (+ n 1) radians)) ,(- iters 1))))
+
+(defun taylor-sine (radians iters)
+    "First call for Taylor series"
+    (macro-sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
+
+;-------------------------------------
+; FIBONACCI
+;-------------------------------------
+
+; Fibonacci(10)
+;(do ((n 0 (1+ n))  ;declares n, initially 0, n+1 each subsequent iteration)
+;     (cur 0 next)   ;declares cur, initially 0, then old value of next
+;     (next 1 (+ cur next))) ;declares next, initially 1, then the sum of (the old) cur and next
+;    ((= 10 n) ;end condition (ends when n = 10)
+;     cur)    ; return value
+;  ;empty body
+;  )
