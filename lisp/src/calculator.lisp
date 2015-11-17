@@ -113,27 +113,27 @@
     "Reduce angle to [-pi, pi] range"
     (- x (* (round (/ x (* 2 pi))) 2 pi)))
 
-(defun sine-iter (radians n current next iters)
+(defun sine-iter (radians n val)
     "Recursive function for Taylor series sum"
-    (if (<= 0 iters)
-        next
-        (sine-iter radians (+ n 1) next (+ next (term (+ n 1) radians)) (- iters 1))))
+    (if (>= n 10)
+        val
+        (sine-iter radians (+ n 1) (+ val (term (+ n 1) radians)))))
 
-(defun taylor-sine (radians iters)
+(defun taylor-sine (radians)
     "First call for Taylor series"
-    (sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
+    (sine-iter (reduce-angle radians) -1 0))
 
 ; Taylor series for sinus - recursive macro
 
-(defmacro macro-sine-iter (radians n current next iters)
-    "Recursive function for Taylor series sum"
-    (if (<= 0 iters)
-        next
-        `(macro-sine-iter ,radians ,(+ n 1) ,next ,(+ next (term (+ n 1) radians)) ,(- iters 1))))
+(defmacro macro-sine-iter (radians n val)
+    "Recursive macro for Taylor series sum"
+    (if (>= n 10)
+        val
+        `(macro-sine-iter ,radians ,(+ n 1) ,(+ val (term (+ n 1) radians)))))
 
-;(defun macro-taylor-sine (radians iters)
-;    "First call for Taylor series"
-;    (macro-sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) iters))
+(defun taylor-sine (radians)
+    "First call for Taylor series"
+    (macro-sine-iter radians -1 0))
 
 ;-------------------------------------
 ; FIBONACCI
