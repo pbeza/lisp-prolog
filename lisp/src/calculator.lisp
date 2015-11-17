@@ -3,46 +3,55 @@
 (defvar *separators* (list '+ '- '* '/) "Default operators for the math macro") 
 
 (defun remove-brackets (lst)
-    "Reduses lists with just one item to the item itself"
-    (do ((result lst (car result)))
-        ((or (not (consp result))
-        (not (null (cdr result)))) result)))
+    "Reduces lists with just one item to the item itself"
+    (if (or (not (consp lst))
+            (not (null (cdr lst))))
+        lst
+        (remove-brackets (car lst))))
 
 (defun separate-list (lst separator test)
     "Returns list of sub-sequences defined by separator"
     (if (not (consp lst))
         lst
-        (let ((result (cons separator nil)) (end 0) (sub)
-        (lst (if (funcall test (car lst) separator)
-            (cdr lst)
-            lst)))
-    (do () ((null lst) result)
-        (setf end
-        (position separator lst :test test))
-	  (setf sub
-		(cons (subseq lst 0 end) nil))
-	  (setf result
-		(append result sub))
-	  (setf lst
-		(if end
-		    (nthcdr (+ 1 end) lst)
-		    nil)))
-	(setf (cdr result) (mapcar #'remove-brackets (cdr result)))
-	result)))
+        (let (
+                (result (cons separator nil))
+                (end 0)
+                (sub)
+                (lst (if (funcall test (car lst) separator)
+                        (cdr lst)
+                        lst)
+                )
+            )
+            (do () ((null lst) result) ; end condition and return value
+                (setf end (position separator lst :test test))
+                (setf sub (cons (subseq lst 0 end) nil))
+                (setf result (append result sub))
+                (setf lst (if end (nthcdr (+ 1 end) lst) nil))
+            )
+            (setf (cdr result) (mapcar #'remove-brackets (cdr result)))
+            result
+        )
+    )
+)
 
 (defun separate-tree (lst separator test)
     "Apply separate-list on all sublists"
     (if (or (not (consp lst)) (eql (first lst) 'quote))
         lst
         (progn
-    (setf lst (mapcar #'(lambda (x)
-			      (if (not (consp x))
-				  x
-				  (separate-tree x separator test)))
-			  lst))
-    (if (not (find separator (rest lst)))
-        lst
-        (separate-list lst separator test)))))
+            (setf lst (mapcar #'(lambda (x)
+                (if (not (consp x))
+                    x
+                    (separate-tree x separator test) ; sublist found
+                )) lst)
+            )
+            (if (not (find separator (rest lst)))
+                lst
+                (separate-list lst separator test)
+            )
+        )
+    )
+)
 
 (defun infix->prefix (infix-expr separators &key (test #'eql))
     "Converts an infix expression to prefix"
@@ -51,16 +60,62 @@
         (setf result (separate-tree result sep test)))
     (remove-brackets result)))
 
-(defun insert-between (lst sep)
-    (if (or (not (consp lst))
-        (not (rest lst)))
-        lst
-    (cons (first lst) (mapcan #'(lambda (x) (list sep x)) (rest lst)))))
-
-(defmacro !! (&body body)
-    "Converts infix to prefix"
-    (infix->prefix body *separators*))
-
 (defun calc (infix-expr)
     "Calculate result of given expression"
-    (eval (infix->prefix infix-expr '(+ - * /))))
+    (eval (infix->prefix infix-expr *separators*)))
+
+; Fibonacci(10)
+;(do ((n 0 (1+ n))  ;declares n, initially 0, n+1 each subsequent iteration)
+;     (cur 0 next)   ;declares cur, initially 0, then old value of next
+;     (next 1 (+ cur next))) ;declares next, initially 1, then the sum of (the old) cur and next
+;    ((= 10 n) ;end condition (ends when n = 10)
+;     cur)    ; return value
+;  ;empty body
+;  )
+
+; Factorial
+
+(defmacro macro-factorial (n)
+    "Macro factorial"
+    (if (= 0 n)
+        '1
+        (let ((m (1- n)))
+            `(* ,n (macro-factorial ,m)))))
+
+(defun factorial (n)
+    "Function factorial"
+    (case n
+        (0 1)
+        (10 (macro-factorial 10))
+        (otherwise (* n (factorial (1- n))))))
+
+; Taylor series for sinus
+
+(defun term (n radians)
+"n-th term of Taylor sine series"
+    (*
+        (/
+            (expt radians (+ (* 2 n) 1))
+            (factorial (+ (* 2 n) 1))
+        )
+        (expt -1 n)
+    )
+)
+
+(defun reduce-angle (x)
+"Reduce angle to [-pi, pi] range"
+    (- x (* (round (/ x (* 2 pi))) 2 pi)))
+
+(defun good-enough? (current next epsilon)
+"Checks if result is satisfying"
+    (< (abs (- current next)) epsilon))
+
+(defun sine-iter (radians n current next epsilon)
+"Recursive function for Taylor series sum"
+    (if (good-enough? current next epsilon)
+        next
+        (sine-iter radians (+ n 1) next (+ next (term (+ n 1) radians)) epsilon)))
+
+(defun taylor-sine (radians epsilon)
+"First call for Taylor series"
+    (sine-iter (reduce-angle radians) 0 0 (term 0 (reduce-angle radians)) epsilon))
