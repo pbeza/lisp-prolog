@@ -98,7 +98,7 @@
 
 ; Taylor series for sinus - recursive function
 
-(defun term (n radians)
+(defun sinus-term (n radians)
     "n-th term of Taylor sine series"
     (*
         (/
@@ -117,7 +117,7 @@
     "Recursive function for Taylor series sum"
     (if (>= n 16)
         val
-        (sine-iter radians (+ n 1) (+ val (term (+ n 1) radians)))))
+        (sine-iter radians (+ n 1) (+ val (sinus-term (+ n 1) radians)))))
 
 (defun taylor-sine (radians)
     "First call for Taylor series"
@@ -129,11 +129,161 @@
     "Recursive macro for Taylor series sum"
     (if (>= n 16)
         val
-        `(macro-sine-iter ,radians ,(+ n 1) ,(+ val (term (+ n 1) radians)))))
+        `(macro-sine-iter ,radians ,(+ n 1) ,(+ val (sinus-term (+ n 1) radians)))))
 
 (defmacro macro-taylor-sine (radians)
     "First call for Taylor series"
     `(macro-sine-iter ,(reduce-angle radians) -1 0))
+
+;-------------------------------------
+; TAYLOR SERIES FOR COSINUS
+;-------------------------------------
+
+; Taylor series for cosinus - recursive function
+
+(defun cosinus-term (n radians)
+    "n-th term of Taylor cosine series"
+    (*
+        (/
+            (expt radians (* 2 n))
+            (factorial (* 2 n))
+        )
+        (expt -1 n)
+    )
+)
+
+(defun cosine-iter (radians n val)
+    "Recursive function for Taylor series sum"
+    (if (>= n 16)
+        val
+        (cosine-iter radians (+ n 1) (+ val (cosinus-term (+ n 1) radians)))))
+
+(defun taylor-cosine (radians)
+    "First call for Taylor series"
+    (cosine-iter (reduce-angle radians) -1 0))
+
+; Taylor series for cosinus - recursive macro
+
+(defmacro macro-cosine-iter (radians n val)
+    "Recursive macro for Taylor series sum"
+    (if (>= n 16)
+        val
+        `(macro-cosine-iter ,radians ,(+ n 1) ,(+ val (cosinus-term (+ n 1) radians)))))
+
+(defmacro macro-taylor-cosine (radians)
+    "First call for Taylor series"
+    `(macro-cosine-iter ,(reduce-angle radians) -1 0))
+
+;-------------------------------------
+; TAYLOR SERIES FOR SINH
+;-------------------------------------
+
+; Taylor series for sinh - recursive function
+
+(defun sinh-term (n radians)
+    "n-th term of Taylor sinh series"
+    (/
+        (expt radians (+ (* 2 n) 1))
+        (factorial (+ (* 2 n) 1))
+    )
+)
+
+(defun sinh-iter (radians n val)
+    "Recursive function for Taylor series sum"
+    (if (>= n 16)
+        val
+        (sinh-iter radians (+ n 1) (+ val (sinh-term (+ n 1) radians)))))
+
+(defun taylor-sinh (radians)
+    "First call for Taylor series"
+    (sinh-iter (reduce-angle radians) -1 0))
+
+; Taylor series for sinh - recursive macro
+
+(defmacro macro-sinh-iter (radians n val)
+    "Recursive macro for Taylor series sum"
+    (if (>= n 16)
+        val
+        `(macro-sinh-iter ,radians ,(+ n 1) ,(+ val (sinh-term (+ n 1) radians)))))
+
+(defmacro macro-taylor-sinh (radians)
+    "First call for Taylor series"
+    `(macro-sinh-iter ,(reduce-angle radians) -1 0))
+
+;-------------------------------------
+; TAYLOR SERIES FOR COSH
+;-------------------------------------
+
+; Taylor series for cosh - recursive function
+
+(defun cosh-term (n radians)
+    "n-th term of Taylor cosh series"
+    (/
+        (expt radians (* 2 n))
+        (factorial (* 2 n))
+    )
+)
+
+(defun cosh-iter (radians n val)
+    "Recursive function for Taylor series sum"
+    (if (>= n 16)
+        val
+        (cosh-iter radians (+ n 1) (+ val (cosh-term (+ n 1) radians)))))
+
+(defun taylor-cosh (radians)
+    "First call for Taylor series"
+    (cosh-iter (reduce-angle radians) -1 0))
+
+; Taylor series for cosh - recursive macro
+
+(defmacro macro-cosh-iter (radians n val)
+    "Recursive macro for Taylor series sum"
+    (if (>= n 16)
+        val
+        `(macro-cosh-iter ,radians ,(+ n 1) ,(+ val (cosh-term (+ n 1) radians)))))
+
+(defmacro macro-taylor-cosh (radians)
+    "First call for Taylor series"
+    `(macro-cosh-iter ,(reduce-angle radians) -1 0))
+
+;-------------------------------------
+; TAYLOR SERIES FOR ARCTAN
+;-------------------------------------
+
+; Taylor series for arctan - recursive function
+
+(defun arctan-term (n radians)
+    "n-th term of Taylor arctan series"
+    (*
+        (/
+            (expt radians (+ (* 2 n) 1))
+            (factorial (+ (* 2 n) 1))
+        )
+        (expt -1 n)
+    )
+)
+
+(defun arctan-iter (radians n val)
+    "Recursive function for Taylor series sum"
+    (if (>= n 16)
+        val
+        (arctan-iter radians (+ n 1) (+ val (arctan-term (+ n 1) radians)))))
+
+(defun taylor-arctan (radians)
+    "First call for Taylor series"
+    (arctan-iter (reduce-angle radians) -1 0))
+
+; Taylor series for arctan - recursive macro
+
+(defmacro macro-arctan-iter (radians n val)
+    "Recursive macro for Taylor series sum"
+    (if (>= n 16)
+        val
+        `(macro-arctan-iter ,radians ,(+ n 1) ,(+ val (arctan-term (+ n 1) radians)))))
+
+(defmacro macro-taylor-arctan (radians)
+    "First call for Taylor series"
+    `(macro-arctan-iter ,(reduce-angle radians) -1 0))
 
 ;-------------------------------------
 ; FIBONACCI
