@@ -82,20 +82,22 @@
 ; Makro rekurencyjne (J.D.)
 
 (defmacro macro-factorial (n)
-    "Makro wykładnicze."
-    (if (= 0 n)
-        '1
-        (let ((m (1- n)))
-            `(* ,n (macro-factorial ,m)))))
+    "Silnia - makro."
+    (cond
+        ((not (numberp n)) `(factorial ,n))
+        ((= 0 n) '1)
+        (t (let ((m (1- n)))
+            `(* ,n (macro-factorial ,m))))))
 
 ; Funkcja rekurencyjna (J.D.)
 
 (defun factorial (n)
-    "Funkcja wykładnicza."
-    (case n
-        (0 1)
-        (10 (macro-factorial 10))
-        (otherwise (* n (factorial (1- n))))))
+    "Silnia - funkcja."
+    (cond
+        ((not (numberp n)) `(factorial ,n))
+        ((>= 1 n) 1)
+        (t (let ((m (1- n)))
+            (* n (factorial m))))))
 
 ; Funkcja rekurencyjna (J.D.)
 
@@ -118,12 +120,6 @@
         reduced
         (append `(,rsym ,reduced) symbols))))
 
-(defun partitionn (predicate list)
-    (loop for x in list
-        if (funcall predicate x) collect x into yes
-        else collect x into no
-        finally (return (values yes no))))
-
 (defun partition (predicate expr)
     (reduce (lambda (a b)
                 (if (funcall predicate a)
@@ -137,12 +133,8 @@
 (defun plus (&rest expr)
     (symbolic-reduce '+ #'+ expr))
 
-(defun invert-sign(&rest args)
-    ;TODO
-    args)
-
-(defun minus (&rest args)
-    (plus (cons (first args) (invert-sign (rest args)))))
+;(defun minus (&rest expr)
+;    (plus (cons (first expr) (apply #'multiply (cons -1 expr)))))
 
 (defun multiply (&rest expr)
     (setf mult (symbolic-reduce '* #'* expr))
@@ -152,8 +144,8 @@
         ((equal (nth 1 mult) 0) 0)
         (t mult)))
 
-(defun divide (&rest args)
-    (apply '/ args))
+;(defun divide (&rest args)
+;    (apply '/ args))
 
 
 ;------------------------------------------------------------------------------
@@ -257,13 +249,13 @@
 ;------------------------------------------------------------------------------
 
 (defun rename-one (item)
-    "Mapowanie operacja -> nazwa funkcji."
+    "Mapowanie operacja -> funkcja."
     (case item
         ('quote nil)
         ('+ #'plus)
-        ('- #'minus)
+        ;('- #'minus)
         ('* #'multiply)
-        ('/ #'divide)
+        ;('/ #'divide)
         ('factorial #'factorial)
         (t item)))
 
@@ -316,10 +308,9 @@
 
 (defun calc-print (expr)
     (setf inlined (!! expr))
-    ;(setf renamed (rename-functions inlined))
-    (setf renamed inlined)
-    (setf calced (calc renamed))
-    (format t "~&~%~a~&~%~a~&~%~a~&~%~a~%" expr inlined renamed calced))
+    (setf calced (calc inlined))
+    (format t "~&~%~a~&~%~a~&~%~a~&~%" expr inlined calced)
+    (calc inlined))
 
 (defun main-loop ()
     (write-line "Input formula (or q to exit)")
@@ -333,12 +324,13 @@
             inp)))
 
 (makunbound '*ex*)
-(defvar *ex* '(3 * 2 * (factorial 5 + (0 * 'x * (0 * 'x))) + 2))
+(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x * (0 * x))) + 2 + x + (factorial x)))
 
 ;(trace postcalc)
 ;(trace precalc)
 (trace multiply)
-(trace symbolic-reduce)
+(trace plus)
+;(trace symbolic-reduce)
 
 (calc-print *ex*)
 ;(main-loop)
