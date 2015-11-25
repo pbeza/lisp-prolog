@@ -120,7 +120,7 @@
         reduced
         (append `(,rsym ,reduced) symbols))))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun reduce-inner (rfun numbers ret)
     (setf item (first numbers))
@@ -132,7 +132,7 @@
     "Dzieli listę na liczby i całą resztę (symbole, funkcje, wyrażenia)."
     (partition-inner predicate expr nil nil))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun partition-inner (predicate expr symbols values)
     (setf item (first expr))
@@ -141,21 +141,23 @@
         ((funcall predicate item) (partition-inner predicate (rest expr) symbols (append values (list item))))
         (t (partition-inner predicate (rest expr) (append symbols (list item)) values))))
 
-(defun partition-innerr (predicate expr)
-    (reduce (lambda (a b)
-                (if (funcall predicate a)
-                        (push a (first b))
-                    (push a (second b)))
-                b)
-            expr
-            :initial-value (list nil nil)
-            :from-end t))
+(defun pm (predicate expr)
+    (partition-macro predicate expr nil nil))
+
+(defmacro partition-macro (predicate expr symbols values)
+    `(let ((item (first ,expr)))
+        (cond
+            ((null item) `(list ,values ,symbols))
+            ((funcall predicate item) (partition-inner predicate (rest ,expr) ,symbols (append ,values (list item))))
+            (t (partition-inner predicate (rest ,expr) (append ,symbols (list item)) ,values)))))
 
 (defun plus (&rest expr)
     (symbolic-reduce '+ #'+ expr 0))
 
-;(defun minus (&rest expr)
-;    (plus (cons (first expr) (apply #'multiply (cons -1 expr)))))
+(defun minus (&rest expr)
+    (if (calculable expr)
+        (apply '- expr)
+        expr))
 
 (defun multiply (&rest expr)
     (setf mult (symbolic-reduce '* #'* expr 1))
@@ -165,8 +167,10 @@
         ((equal (nth 1 mult) 0) 0)
         (t mult)))
 
-;(defun divide (&rest args)
-;    (apply '/ args))
+(defun divide (&rest args)
+    (if (calculable expr)
+        (apply '/ expr)
+        expr))
 
 
 ;------------------------------------------------------------------------------
@@ -357,9 +361,9 @@
     (case item
         ('quote nil)
         ('+ #'plus)
-        ;('- #'minus)
+        ('- #'minus)
         ('* #'multiply)
-        ;('/ #'divide)
+        ('/ #'divide)
         ('factorial #'factorial)
         ('d #'d)
         (t item)))
@@ -439,4 +443,5 @@
 ;(trace partition-inner)
 
 (calc-print *ex*)
+(pm #'numberp '(3 1 2 x y z))
 ;(main-loop)
