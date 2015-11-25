@@ -5,6 +5,8 @@
 
 (defvar *separators* (list '+ '- '* '/) "Domyślnie rozpoznawane operatory")
 
+; Funkcja rekurencyjna (P.B.)
+
 (defun remove-brackets (lst)
     "Redukuje listę z jednym elementem do tego elementu."
     (if (or (not (consp lst))
@@ -13,7 +15,7 @@
       (remove-brackets (car lst))))
 
 (defun separate-list (lst separator test)
-    "Zwraca listę podlist zdefiniowanych przez separator."
+    "Zwraca listę podlist poprzedzonych separatoremi, wyrzucając separatory infixowe."
     (if (not (consp lst))
         lst
         (let (
@@ -37,17 +39,20 @@
     )
 )
 
+; Funkcja rekurencyjna (P.B.)
+
 (defun separate-tree (lst separator test)
-    "Wywołaj separate-list na wszystkich podlistach"
+    "Wywołaj separate-list na wszystkich podlistach zaczynając od najbardziej zagnieżdżonych."
     (if (or (not (consp lst)) (eql (first lst) 'quote))
         lst
         (progn
             (setf lst (mapcar #'(lambda (x)
                 (if (not (consp x))
                     x
-                    (separate-tree x separator test) ; sublist found
+                    (separate-tree x separator test) ; znaleziono podlistę
                 )) lst)
             )
+            ;(print 'separate-tree) (print lst)
             (if (not (find separator (rest lst)))
                 lst
                 (separate-list lst separator test)
@@ -57,14 +62,16 @@
 )
 
 (defun infix->prefix (infix-expr separators &key (test #'eql))
-    "Zamienia postać infixową wyrażenia na prefixową"
+    "Zamienia postać infixową wyrażenia na prefixową."
     (let ((result infix-expr))
     (dolist (sep separators)
-        (setf result (separate-tree result sep test)))
+        (setf result (separate-tree result sep test))
+        ;(print 'infix->prefix) (print result)
+    )
     (remove-brackets result)))
 
 (defmacro !! (body)
-    "Konwersja postaci infix na prefix z domyślnymi separatorami"
+    "Konwersja postaci infix na prefix z domyślnymi separatorami."
     `(infix->prefix ,body *separators*))
 
 
@@ -72,20 +79,25 @@
 ; Operacje matematyczne.
 ;------------------------------------------------------------------------------
 
+; Makro rekurencyjne (D.J.)
 
 (defmacro macro-factorial (n)
-    "Makro wykładnicze"
+    "Makro wykładnicze."
     (if (= 0 n)
         '1
         (let ((m (1- n)))
             `(* ,n (macro-factorial ,m)))))
 
+; Funkcja rekurencyjna (D.J.)
+
 (defun factorial (n)
-    "Funkcja wykładnicza"
+    "Funkcja wykładnicza."
     (case n
         (0 1)
         (10 (macro-factorial 10))
         (otherwise (* n (factorial (1- n))))))
+
+; Funkcja rekurencyjna (D.J.)
 
 (defun calculable (expr)
     (cond
@@ -254,6 +266,8 @@
         ('factorial #'factorial)
         (t item)))
 
+; Funkcja rekurencyjna (D.J.)
+
 (defun rename-functions (expr)
     "Zamienia +, -, * i / na równoważne funkcje."
     (cond
@@ -262,6 +276,8 @@
         ((consp (first expr)) (cons (rename-functions (first expr)) (rename-functions (rest expr))))
         (t (cons (rename-one (first expr)) (rename-functions (rest expr))))
     ))
+
+; Funkcja rekurencyjna (D.J.)
 
 (defun precalc (expr)
     "Oblicza zagnieżdżone wyrażenia wewnątrz expr."
