@@ -105,22 +105,42 @@
     (cond
         ((numberp expr) t)
         ((consp expr) (and (calculable (first expr)) (calculable (rest expr))))
-        (nil t)
         (t nil)))
 
-(defun symbolic-reduce (rsym rfun expr)
+(defun symbolic-reduce (rsym rfun expr initial)
     (let* (
         (partitioned (partition #'numberp expr))
         (numbers (first partitioned))
         (symbols (second partitioned))
-        (reduced (reduce rfun numbers))
+        (reduced (reduce-inner rfun numbers initial))
     )
     ;(format t "~&~%~a~&~%~a" expr partitioned)
     (if (null symbols)
         reduced
         (append `(,rsym ,reduced) symbols))))
 
+; Funkcja rekurencyjna (D.J.)
+
+(defun reduce-inner (rfun numbers ret)
+    (setf item (first numbers))
+    (if (null item)
+        ret
+        (reduce-inner rfun (rest numbers) (funcall rfun item ret))))
+
 (defun partition (predicate expr)
+    "Dzieli listę na liczby i całą resztę (symbole, funkcje, wyrażenia)."
+    (partition-inner predicate expr nil nil))
+
+; Funkcja rekurencyjna (D.J.)
+
+(defun partition-inner (predicate expr symbols values)
+    (setf item (first expr))
+    (cond
+        ((null item) (list values symbols))
+        ((funcall predicate item) (partition-inner predicate (rest expr) symbols (append values (list item))))
+        (t (partition-inner predicate (rest expr) (append symbols (list item)) values))))
+
+(defun partition-innerr (predicate expr)
     (reduce (lambda (a b)
                 (if (funcall predicate a)
                         (push a (first b))
@@ -131,13 +151,13 @@
             :from-end t))
 
 (defun plus (&rest expr)
-    (symbolic-reduce '+ #'+ expr))
+    (symbolic-reduce '+ #'+ expr 0))
 
 ;(defun minus (&rest expr)
 ;    (plus (cons (first expr) (apply #'multiply (cons -1 expr)))))
 
 (defun multiply (&rest expr)
-    (setf mult (symbolic-reduce '* #'* expr))
+    (setf mult (symbolic-reduce '* #'* expr 1))
     (cond
         ((not (consp mult)) mult)
         ((>= 1 (length mult)) mult)
@@ -249,6 +269,19 @@
 ; Podstawowa funkcjonalność kalkulatora.
 ;------------------------------------------------------------------------------
 
+
+
+(defun expand-exp (expr)
+    "Rozwija funkcję wykładniczą. Np. e^(x+2) -> e^x*e^2"
+    (cond
+        ((null (first expr)) nil)
+        ((and (consp (first expr)) (equal 'exp (first (first expr))))
+            
+            )
+        ((consp (first expr)) (cons (expand (first expr)) (expand (rest expr))))
+        (t (cons (first expr) (expand (rest expr))))
+    ))
+
 (defun rename-one (item)
     "Mapowanie operacja -> funkcja."
     (case item
@@ -329,9 +362,10 @@
 
 ;(trace postcalc)
 ;(trace precalc)
-(trace multiply)
-(trace plus)
+;(trace multiply)
+;(trace plus)
 ;(trace symbolic-reduce)
+;(trace partition-inner)
 
 (calc-print *ex*)
 ;(main-loop)
