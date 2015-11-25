@@ -360,6 +360,7 @@
         ('* #'multiply)
         ;('/ #'divide)
         ('factorial #'factorial)
+        ('d #'d)
         (t item)))
 
 ; Funkcja rekurencyjna (J.D.)
@@ -427,7 +428,7 @@
             inp)))
 
 (makunbound '*ex*)
-(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x * (0 * x))) + 2 + x + (factorial x)))
+(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x * (0 * x))) + 2 + x + (factorial x) + (d x (* x x x))))
 
 ;(trace postcalc)
 ;(trace precalc)
