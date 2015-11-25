@@ -1,3 +1,6 @@
+; TODO ogarnąć czemu nie działa np. (d 'x '(* 1 (+ x x)))
+
+
 (defun remove-brackets (lst)
   "Reduces lists with just one item to the item itself"
   (if (or (not (consp lst))
@@ -6,49 +9,28 @@
     (remove-brackets (car lst))))
 
 (defun d (x E)
+  "Różniczkuje zadane wyrażenie E składające się ze zmiennej x"
+  (print E)
   (cond
-    ;((constant? E) (diff-constant x E))
-    ((integerp E) (diff-constant x E))
-    ;((variable? E) (diff-variable x E))
-    ((equalp E x) (diff-variable x E))
-    ((sum? E) (diff-sum x E))
-    ((product? E) (diff-product x E))
-    ((listp E) (diff-variable x (remove-brackets E)))
-    (t (print "Error: cannot parse expression."))
+    ((integerp E) 0)
+    ((equalp E x) 1)
+    ((equalp (length (write-to-string E)) 1) E)
+    ((equalp '+ (car E)) (diff-sum x E))
+    ((equalp '* (car E)) (diff-product x E))
+    ((and
+        (equalp (length E) 1)
+        (equalp (car E) x)
+    ) 1)
+    ;((null E) 1)
+    ;((listp E) (diff-variable x (remove-brackets E)))
+    (t (print "Error: cannot parse expression.") (print E))
   )
 )
-
-; Różniczkowanie stałej.
-(defun diff-constant (x E) (print "diff-constant") 0)
-
-; Różniczkowanie zmiennej (dx x = 1, dx y = 0).
-(defun diff-variable (x E)
-  (print "diff-variable")
-  (if (equalp x E) 1 0))
-
-(defun pair? (E)
-  (print "pair?")
-  (equalp (length (cdr E)) 2))
-
-; Sprawdzenie czy suma
-(defun sum? (E)
-  (print "sum?")
-  (and (pair? E) (equalp '+ (car E))))
-
-; Sprawdzenie czy iloczyn.
-(defun product? (E)
-  (print "product?")
-  (and (pair? E) (equalp '* (car E))))
-
-; Tworzy sumę.
-(defun make-sum (x) (cons '+ x))
-
-; Tworzy iloczyn.
-(defun make-product (x) (cons '* x))
 
 ; Pochodna sumy to suma pochodnych.
 ; d (E1 + E2) = d E1 + d E2
 (defun diff-sum (x E)
+  "Różniczkuje sumę wyrażeń"
   (print "diff-sum")
   (make-sum
     (map
@@ -56,50 +38,22 @@
       (lambda (expr) (d x expr))
       (cdr E))))
 
-; Pochodna iloczynu to:
-;   d E1 E2 = E1 d E2 + E2 d E1
-; This is actually implemented by chain-rule; the diff-product function
-; filters out the cases where the product has fewer than two factors.
+; d E1 E2 = E1 d E2 + E2 d E1
 (defun diff-product (x E)
-  (let*
-    ; See how many things we're got.
-    ((nfact (length (cdr E))))
-    (cond
-      ; No factors.  Just a long-winded way to write the constant 1,
-      ; whose differential is zero.
-      ((equalp nfact 0) 0)
-      ; One factor.  Not really much of a product.  Loose the multiply
-      ; and take the differential of the single factor.
-      ((equalp nfact 1) (d x (car (cdr E))))
-      ; Real case.
-      (t (chain-rule x E)))))
-
-; Here's the actual chain rule function.
-;   d E1 E2 = E1 d E2 + E2 d E1
-(defun chain-rule (x E)
-  (print "chain-rule")
-  (print E)
-  (let*
-    (
-      (E1 (car (cdr E)))		; First factor.
-      (E2 (make-product (cdr (cdr E)))) ; (* Other factors)
-      (dE1 (d x E1))			; d E1
-      (dE2 (d x E2))			; d E2
-    )
-    (print "E1")
-    (print E1)
-    (print "dE2")
-    (print dE2)
-    (print "E2")
-    (print E2)
-    (print "dE1")
-    (print dE1)
-    (
-     make-sum
-      (list
-        (make-product (list E1 dE2))
-        (make-product (list E2 dE1)))
-    )))
+  "Różniczkuje iloczyn wyrażeń"
+  (print "diff-product")
+  (let(
+    (E1 (car (cdr E)))              ; First factor
+    (E2 (cons '* (cdr (cdr E)))))   ; (* Other factors)
+    (if (equalp (length E2) 2)
+      (setf E2 (cdr E2)))
+  (setf dE1 (d x E1))               ; d E1
+  (setf dE2 (d x E2))               ; d E2
+  (
+    cons '+
+    (list
+      (cons '* (list E1 dE2))
+      (cons '* (list E2 dE1))))))
 
 ; Some basic simplification.  Not easy to do "completely," but this helps
 ; a lot.
