@@ -1,119 +1,87 @@
-;;;; Common Lisp infix/prefix conversion utility
-;;;
-;;;  $Id: infpre.lisp,v 1.2 2006/11/19 16:01:52 jornv Exp $
-;;;
-;;;; Licence LGPL
-;;;
-;;;; Copyright: Joern Inge Vestgaarden (jivestgarden at gmail com)
-;;; 
-;;;; Syntax: 
-;;;   Works directly on lisp lists, not on strings.
-;;;   The cost is that all operators must be separated by spaces, 
-;;;   i.e. 1 + 2, not 1+2. 
-;;;   
-;;;   Unlike most infix utilities, the infix conversion
-;;;   does not interpret +,*, etc. as binary operators,
-;;;   but as list separted by the operator
-;;;   i.e. (1 + 2 + 3) -> (+ 1 2 3) not (+ (+ 1 2) 3). 
-;;;
-;;;   The order of the operators determine precedence. 
-;;;
-;;;; Examples:
-;;;   (1 + 2 * exp (-1 * x) * 3) -> (+ 1 (* 2 (exp (* -1 x)) 3))
-;;; 
-;;;; Bugs: 
-;;;   Works directly on CL symbols which cause problems with packages.
-;;;   The math macro only works because +-*/ are speical variables
-;;;   in the common-lisp package. In general a new test-function
-;;;   working on names must be made and supplied.
-;;;
+;------------------------------------------------------------------------------
+; Konwersja postaci infixowej wyrażenia na prefixową.
+;------------------------------------------------------------------------------
 
-;(defpackage "INFPRE"
-;  (:use "COMMON-LISP")
-;  (:export "INFIX->PREFIX"
-;       "PREFIX->INFIX"
-;       "MATH"
-;       "!!")
-;  (:documentation ""))
 
-;(in-package :infpre)
-
-(defvar *separators* (list '+ '- '* '/) "Default operators for the math macro")
+(defvar *separators* (list '+ '- '* '/) "Domyślnie rozpoznawane operatory")
 
 (defun remove-brackets (lst)
-  "Reduces lists with just one item to the item itself"
-  (do ((result lst (car result)))
-      ((or (not (consp result))
-       (not (null (cdr result)))) result)))
+    "Redukuje listę z jednym elementem do tego elementu."
+    (if (or (not (consp lst))
+            (not (null (cdr lst))))
+      lst
+      (remove-brackets (car lst))))
 
 (defun separate-list (lst separator test)
-  "Returns list of sub-sequences defined by separator"
-  (if (not (consp lst))
-      lst
-      (let ((result (cons separator nil)) (end 0) (sub)
-        (lst (if (funcall test (car lst) separator)
-             (cdr lst)
-             lst)))
-    (do () ((null lst) result)
-      (setf end 
-        (position separator lst :test test))
-      (setf sub
-        (cons (subseq lst 0 end) nil))
-      (setf result 
-        (append result sub))
-      (setf lst 
-        (if end 
-            (nthcdr (+ 1 end) lst)
-            nil)))
-    (setf (cdr result) (mapcar #'remove-brackets (cdr result)))
-    result)))
+    "Zwraca listę podlist zdefiniowanych przez separator."
+    (if (not (consp lst))
+        lst
+        (let (
+                (result (cons separator nil))
+                (end 0)
+                (sub)
+                (lst (if (funcall test (car lst) separator)
+                        (cdr lst)
+                        lst)
+                )
+            )
+            (do () ((null lst) result) ; warunek końcowy i zwracana wartość
+                (setf end (position separator lst :test test))
+                (setf sub (cons (subseq lst 0 end) nil))
+                (setf result (append result sub))
+                (setf lst (if end (nthcdr (+ 1 end) lst) nil))
+            )
+            (setf (cdr result) (mapcar #'remove-brackets (cdr result)))
+            result
+        )
+    )
+)
 
 (defun separate-tree (lst separator test)
-  "Apply separate-list on all sublists"
-  (if (or (not (consp lst)) (eql (first lst) 'quote))
-      lst
-      (progn
-    (setf lst (mapcar #'(lambda (x) 
-                  (if (not (consp x))
-                  x
-                  (separate-tree x separator test)))
-              lst))
-    (if (not (find separator (rest lst)))
+    "Wywołaj separate-list na wszystkich podlistach"
+    (if (or (not (consp lst)) (eql (first lst) 'quote))
         lst
-        (separate-list lst separator test)))))
+        (progn
+            (setf lst (mapcar #'(lambda (x)
+                (if (not (consp x))
+                    x
+                    (separate-tree x separator test) ; sublist found
+                )) lst)
+            )
+            (if (not (find separator (rest lst)))
+                lst
+                (separate-list lst separator test)
+            )
+        )
+    )
+)
 
 (defun infix->prefix (infix-expr separators &key (test #'eql))
-  "Converts an infix expression to prefix"
-  (let ((result infix-expr))
+    "Zamienia postać infixową wyrażenia na prefixową"
+    (let ((result infix-expr))
     (dolist (sep separators)
-      (setf result (separate-tree result sep test)))
+        (setf result (separate-tree result sep test)))
     (remove-brackets result)))
 
-(defun insert-between (lst sep)
-  (if (or (not (consp lst))
-      (not (rest lst)))
-      lst
-    (cons (first lst) (mapcan #'(lambda (x) (list sep x)) (rest lst)))))
-
-;;;; End of infix prefix conversion
-
-
-;;;; Additional useful macros as interfaces to infix->prefix
-
 (defmacro !! (body)
-    "Converts infix to prefix"
+    "Konwersja postaci infix na prefix z domyślnymi separatorami"
     `(infix->prefix ,body *separators*))
 
 
+;------------------------------------------------------------------------------
+; Operacje matematyczne.
+;------------------------------------------------------------------------------
+
+
 (defmacro macro-factorial (n)
-    "Macro factorial"
+    "Makro wykładnicze"
     (if (= 0 n)
         '1
         (let ((m (1- n)))
             `(* ,n (macro-factorial ,m)))))
 
 (defun factorial (n)
-    "Function factorial"
+    "Funkcja wykładnicza"
     (case n
         (0 1)
         (10 (macro-factorial 10))
@@ -175,6 +143,12 @@
 (defun divide (&rest args)
     (apply '/ args))
 
+
+;------------------------------------------------------------------------------
+; RÓŻNICZKOWANIE SYMBOLICZNE.
+;------------------------------------------------------------------------------
+
+
 ; Tworzy sume.
 (defun make-sum (x) (cons '+ x))
 
@@ -216,42 +190,38 @@
                 nil))
         E))
 
-; Here's the simplifier.
 (defun simpl (isit? addop ident E)
-    ;(write-line "Simpl")
-    ;(write E)
-    ;(write-line "")
     (let*
         (
-          (parts (cdr E))               ; Terms or factors.
+          (parts (cdr E))                    ; Terms or factors.
           (sparts (mapcar #'simplify parts)) ; Terms or factors simplified.
-          (fparts (flat isit? sparts))  ; Simp (* x (* y z)) to (* x y z)
-          (zout (replace-zero fparts))  ; Reduce (* ... 0 ...) to 0.
+          (fparts (flat isit? sparts))       ; Simp (* x (* y z)) to (* x y z)
+          (zout (replace-zero fparts))       ; Reduce (* ... 0 ...) to 0.
           (unid (remove-identity zout ident))
-                                        ; Remove identity (0 for + 1 for *)
+                                             ; Remove identity (0 for + 1 for *)
         )
-        (proper addop ident unid))) ; Cleanup; see below.
+        (proper addop ident unid)))          ; Cleanup; see below.
 
 ; The flat function looks for subexpressions of the same operator and merges
 ; them in.  For instance, change (+ x y (+ z w) (+ q 4) g) to
 ; (+ x y z w q 4 g).
 (defun flat (isit args)
   (cond
-    ((null args) ())                   ; Empty is empty.
-    ((not (pair? args)) (list args))    ; I don't see how this happens, but ok.
-    ((isit (car args))                  ; If first arg same op, combine.
+    ((null args) ())                         ; Empty is empty.
+    ((not (pair? args)) (list args))         ; I don't see how this happens, but ok.
+    ((isit (car args))                       ; If first arg same op, combine.
       (append (flat isit (cdar args)) (flat isit (cdr args)))
     )
-    (t  ; Default: go on to the next.
+    (t                                       ; Default: go on to the next.
         (cons (car args) (flat isit (cdr args))))))
 
 ; This simply adds the operator back to a list of terms or factors, but it
 ; avoids turning the empty list into (+) or the singleton list int (* 17).
 (defun proper (addop ident args)
   (cond
-    ((null args) ident)            ; () becomes 0 or 1.
-    ((null (cdr args)) (car args)) ; (x) becomes x
-    (t (addop args))))              ; (x y z) to (+/* x y z)
+    ((null args) ident)                      ; () becomes 0 or 1.
+    ((null (cdr args)) (car args))           ; (x) becomes x
+    (t (addop args))))                       ; (x y z) to (+/* x y z)
 
 ; See if the expression is a multiplication containing zero (hence equal
 ; to zero).
@@ -260,7 +230,6 @@
         (product? E)
         (some (lambda (item) (equal 0 item)) E)
     ))
-    
 
 ; Replace zero-valued multiply items with zero.  This works only on
 ; the top level.
@@ -270,7 +239,12 @@
       (replace-zero (cdr expr)))))
 
 
+;------------------------------------------------------------------------------
+; Podstawowa funkcjonalność kalkulatora.
+;------------------------------------------------------------------------------
+
 (defun rename-one (item)
+    "Mapowanie operacja -> nazwa funkcji."
     (case item
         ('quote nil)
         ('+ #'plus)
@@ -281,7 +255,7 @@
         (t item)))
 
 (defun rename-functions (expr)
-    "Changes symbols +, -, * and / to respective functions"
+    "Zamienia +, -, * i / na równoważne funkcje."
     (cond
         ((null expr) nil)
         ;((equal (first expr) 'quote) (first (rename-functions (rest expr))))
@@ -290,7 +264,7 @@
     ))
 
 (defun precalc (expr)
-    "Calculates nested expressions inside this one."
+    "Oblicza zagnieżdżone wyrażenia wewnątrz expr."
     ;(write-line "Precalc")
     ;(write expr)
     ;(write-line "")
@@ -301,7 +275,7 @@
     ))
 
 (defun postcalc (expr)
-    "Calculates this expression, assuming it has no nested expressions."
+    "Oblicza wyrażenie expr zakładając, że nie ma ono zagnieżdżonych wyrażeń."
     ;(write-line "Postcalc")
     ;(write expr)
     ;(write-line "")
