@@ -112,12 +112,21 @@
         (let ((m (1- n)))
             `(* ,n (macro-factorial ,m)))))
 
+(defmacro macro-factorial (n)
+    "Macro factorial"
+    (cond
+        ((not (numberp n)) `(factorial ,n))
+        ((= 0 n) '1)
+        (t (let ((m (1- n)))
+            `(* ,n (macro-factorial ,m))))))
+
 (defun factorial (n)
     "Function factorial"
-    (case n
-        (0 1)
-        (10 (macro-factorial 10))
-        (otherwise (* n (factorial (1- n))))))
+    (cond
+        ((not (numberp n)) `(factorial ,n))
+        ((>= 1 n) 1)
+        (t (let ((m (1- n)))
+            (* n (factorial m))))))
 
 (defun calculable (expr)
     (cond
@@ -342,7 +351,7 @@
             inp)))
 
 (makunbound '*ex*)
-(defvar *ex* '(3 * 2 * (factorial 5 + (0 * 'x * (0 * 'x))) + 2))
+(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x * (0 * x))) + 2 + x + (factorial x)))
 
 ;(trace postcalc)
 ;(trace precalc)
