@@ -408,8 +408,8 @@
     ))
 
 (defun calc (expr)
-    ;(postcalc (simplify (precalc (simplify expr)))))
-    (postcalc (precalc expr)))
+    (postcalc (simplify (precalc (simplify expr)))))
+    ;(postcalc (precalc expr)))
 
 (defun calc-print (expr)
     (setf inlined (!! expr))
