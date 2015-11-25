@@ -157,42 +157,45 @@
 
 
 ;------------------------------------------------------------------------------
-; RÓŻNICZKOWANIE SYMBOLICZNE.
+; Różniczkowanie symboliczne.
 ;------------------------------------------------------------------------------
 
 
-; Tworzy sume.
-(defun make-sum (x) (cons '+ x))
+(defun make-sum (x)
+    "Tworzy sumę."
+    (cons '+ x))
 
-; Tworzy iloczyn.
-(defun make-product (x) (cons '* x))
+(defun make-product (x)
+    "Tworzy iloczyn."
+    (cons '* x))
 
-; Sprawdzenie czy suma
 (defun sum? (E)
-  (and (pair? E) (equalp '+ (car E))))
+    "Sprawdzenie czy wyrażenie jest sumą."
+    (and (pair? E) (equalp '+ (car E))))
 
-; Sprawdzenie czy iloczyn.
 (defun product? (E)
-  (and (pair? E) (equalp '* (car E))))
+    "Sprawdzenie czy wyrażenie jest iloczynem."
+    (and (pair? E) (equalp '* (car E))))
 
 (defun pair? (E)
+    "Sprawdzenie czy wyrażenie jest listą dwuelementową."
     (and (consp E) (equalp (length (cdr E)) 2)))
 
 ; Top-level simplify.
 (defun simplify (E)
-  (cond
-    ((sum? E) (simplify-sum E))
-    ((product? E) (simplify-product E))
-    (t E)))
+    (cond
+        ((sum? E) (simplify-sum E))
+        ((product? E) (simplify-product E))
+        (t E)))
 
 ; The sum and product simplifiers are mainly calls to simpl, with some
 ; appropriate control parameters.  The parameters are the corresponding
 ; identifier and make- function, and the identity for that operation.
 (defun simplify-sum (E)
-  (simpl #'sum? #'make-sum 0 E))
+    (simpl #'sum? #'make-sum 0 E))
 
 (defun simplify-product (E)
-  (simpl #'product? #'make-product 1 E))
+    (simpl #'product? #'make-product 1 E))
 
 (defun remove-identity (E ident)
     (maplist
@@ -218,26 +221,25 @@
 ; them in.  For instance, change (+ x y (+ z w) (+ q 4) g) to
 ; (+ x y z w q 4 g).
 (defun flat (isit args)
-  (cond
-    ((null args) ())                         ; Empty is empty.
-    ((not (pair? args)) (list args))         ; I don't see how this happens, but ok.
-    ((isit (car args))                       ; If first arg same op, combine.
-      (append (flat isit (cdar args)) (flat isit (cdr args)))
-    )
-    (t                                       ; Default: go on to the next.
-        (cons (car args) (flat isit (cdr args))))))
+    (cond
+        ((null args) ())                     ; Empty is empty.
+        ((not (pair? args)) (list args))     ; I don't see how this happens, but ok.
+        ((isit (car args))                   ; If first arg same op, combine.
+          (append (flat isit (cdar args)) (flat isit (cdr args)))
+        )
+        (t                                   ; Default: go on to the next.
+            (cons (car args) (flat isit (cdr args))))))
 
 ; This simply adds the operator back to a list of terms or factors, but it
 ; avoids turning the empty list into (+) or the singleton list int (* 17).
 (defun proper (addop ident args)
   (cond
-    ((null args) ident)                      ; () becomes 0 or 1.
-    ((null (cdr args)) (car args))           ; (x) becomes x
-    (t (addop args))))                       ; (x y z) to (+/* x y z)
+      ((null args) ident)                    ; () becomes 0 or 1.
+      ((null (cdr args)) (car args))         ; (x) becomes x
+      (t (addop args))))                     ; (x y z) to (+/* x y z)
 
-; See if the expression is a multiplication containing zero (hence equal
-; to zero).
 (defun is-zero-mult? (E)
+    "Sprawdza czy iloczyn zawiera 0, żeby zamianić wyrażenie na 0."
     (and
         (product? E)
         (some (lambda (item) (equal 0 item)) E)
