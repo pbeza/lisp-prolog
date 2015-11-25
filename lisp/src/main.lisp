@@ -79,7 +79,7 @@
 ; Operacje matematyczne.
 ;------------------------------------------------------------------------------
 
-; Makro rekurencyjne (D.J.)
+; Makro rekurencyjne (J.D.)
 
 (defmacro macro-factorial (n)
     "Makro wykładnicze."
@@ -88,7 +88,7 @@
         (let ((m (1- n)))
             `(* ,n (macro-factorial ,m)))))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun factorial (n)
     "Funkcja wykładnicza."
@@ -97,7 +97,7 @@
         (10 (macro-factorial 10))
         (otherwise (* n (factorial (1- n))))))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun calculable (expr)
     (cond
@@ -181,23 +181,23 @@
     "Sprawdzenie czy wyrażenie jest listą dwuelementową."
     (and (consp E) (equalp (length (cdr E)) 2)))
 
-; Top-level simplify.
 (defun simplify (E)
+    "Główna funkcja upraszczające wyrażenie."
     (cond
         ((sum? E) (simplify-sum E))
         ((product? E) (simplify-product E))
         (t E)))
 
-; The sum and product simplifiers are mainly calls to simpl, with some
-; appropriate control parameters.  The parameters are the corresponding
-; identifier and make- function, and the identity for that operation.
 (defun simplify-sum (E)
+    "Funkcja upraszczające sumę."
     (simpl #'sum? #'make-sum 0 E))
 
 (defun simplify-product (E)
+    "Funkcja upraszczające iloczyn."
     (simpl #'product? #'make-product 1 E))
 
 (defun remove-identity (E ident)
+    "Usuwa wszystkie elementy neutralne operacji (0 dla sumy, 1 dla iloczynu)."
     (maplist
         (lambda (x)
             (if (not (equalp (first x) ident))
@@ -208,12 +208,11 @@
 (defun simpl (isit? addop ident E)
     (let*
         (
-          (parts (cdr E))                    ; Terms or factors.
-          (sparts (mapcar #'simplify parts)) ; Terms or factors simplified.
-          (fparts (flat isit? sparts))       ; Simp (* x (* y z)) to (* x y z)
-          (zout (replace-zero fparts))       ; Reduce (* ... 0 ...) to 0.
-          (unid (remove-identity zout ident))
-                                             ; Remove identity (0 for + 1 for *)
+          (parts (cdr E))                    ; Składniki operacji.
+          (sparts (mapcar #'simplify parts)) ; Uproszczone składniki operacji.
+          (fparts (flat isit? sparts))       ; Zamienione (* x (* y z)) --> (* x y z).
+          (zout (replace-zero fparts))       ; Zamienione (* ... 0 ...) --> 0.
+          (unid (remove-identity zout ident)); Usuń elementy neutralne operacji.
         )
         (proper addop ident unid)))          ; Cleanup; see below.
 
@@ -268,7 +267,7 @@
         ('factorial #'factorial)
         (t item)))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun rename-functions (expr)
     "Zamienia +, -, * i / na równoważne funkcje."
@@ -279,7 +278,7 @@
         (t (cons (rename-one (first expr)) (rename-functions (rest expr))))
     ))
 
-; Funkcja rekurencyjna (D.J.)
+; Funkcja rekurencyjna (J.D.)
 
 (defun precalc (expr)
     "Oblicza zagnieżdżone wyrażenia wewnątrz expr."
