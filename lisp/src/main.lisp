@@ -27,7 +27,7 @@
                         lst)
                 )
             )
-            (do () ((null lst) result) ; warunek końcowy i zwracana wartość
+            (do () ((null lst) result) ; Warunek końcowy i zwracana wartość.
                 (setf end (position separator lst :test test))
                 (setf sub (cons (subseq lst 0 end) nil))
                 (setf result (append result sub))
@@ -49,13 +49,13 @@
             (setf lst (mapcar #'(lambda (x)
                 (if (not (consp x))
                     x
-                    (separate-tree x separator test) ; znaleziono podlistę
+                    (separate-tree x separator test) ; Znaleziono podlistę.
                 )) lst)
             )
             ;(print 'separate-tree) (print lst)
             (if (not (find separator (rest lst)))
                 lst
-                (separate-list lst separator test)
+                (separate-list lst separator test)  ; "Wyjmij" znak przed wyrażenie.
             )
         )
     )
@@ -180,16 +180,16 @@
     "Różniczkuje zadane wyrażenie E składające się ze zmiennej x."
     (setf E (remove-brackets E))
     (cond
-        ((integerp E) 0)				; stała liczbowa
-        ((equalp E x) 1)				; zmienna
-        ((equalp (length (write-to-string E)) 1) E)	; stała "literowa"
-        ((equalp '+ (car E)) (diff-sum x E))		; suma
-        ((equalp '* (car E)) (diff-product x E))	; iloczyn
-        ((and						; lista z jedną zmienną
+        ((integerp E) 0)                            ; stała liczbowa
+        ((equalp E x) 1)                            ; zmienna
+        ((equalp (length (write-to-string E)) 1) E) ; stała "literowa"
+        ((equalp '+ (car E)) (diff-sum x E))        ; suma
+        ((equalp '* (car E)) (diff-product x E))    ; iloczyn
+        ((and                                       ; lista z jedną zmienną
             (equalp (length E) 1)
             (equalp (car E) x)
         ) 1)
-        ((null E) 0)					; pusta lista (NIL)
+        ((null E) 0)                                ; pusta lista (NIL)
         (t (print "Error: cannot parse expression.") (print E))))
 
 (defun diff-sum (x E)
@@ -203,12 +203,14 @@
 (defun diff-product (x E)
     "Różniczkuje iloczyn wyrażeń, tzn.: d E1 E2 = E1 d E2 + E2 d E1."
     (let(
-        (E1 (car (cdr E)))				; pierwszy element iloczynu
-        (E2 (cons '* (cdr (cdr E)))))			; (* pozostałe elementy iloczynu)
-        (if (equalp (length E2) 2)
-            (setf E2 (cdr E2)))
-    (setf dE1 (d x E1))					; d E1
-    (setf dE2 (d x E2))					; d E2
+        (E1 (car (cdr E)))                          ; pierwszy element iloczynu
+        (E2 (cons '* (cdr (cdr E)))))               ; (* pozostałe elementy iloczynu)
+        (when (equalp (length E2) 2)
+            (setf E2 (cdr E2))
+            (if (equalp (length E2) 1)
+                (setf E2 (car E2))))
+    (setf dE1 (d x E1))                             ; d E1
+    (setf dE2 (d x E2))                             ; d E2
     (
         cons '+
         (list
@@ -260,34 +262,35 @@
     "Wykonuje szereg uproszczeń."
     (let*
         (
-          (parts (cdr E))				; Składniki operacji.
-          (sparts (mapcar #'simplify parts))		; Uproszczone składniki operacji.
-          (fparts (flat isit? sparts))			; Zamienione (* x (* y z)) --> (* x y z).
-          (zout (replace-zero fparts))			; Zamienione (* ... 0 ...) --> 0.
-          (unid (remove-identity zout ident))		; Usuń elementy neutralne operacji.
+          (parts (cdr E))                           ; Składniki operacji.
+          (sparts (mapcar #'simplify parts))        ; Uproszczone składniki operacji.
+          (fparts (flat isit? sparts))              ; Zamienione (* x (* y z)) --> (* x y z).
+          (zout (replace-zero fparts))              ; Zamienione (* ... 0 ...) --> 0.
+          (unid (remove-identity zout ident))       ; Usuń elementy neutralne operacji.
         )
-        (proper addop ident unid)))			; Dodaje znak operacji do uproszczonego wyrażenia
+        (proper addop ident unid)))                 ; Dodaje znak operacji do uproszczonego wyrażenia
 
 ; Funkcja rekurencyjna (P.B.)
 
 (defun flat (isit args)
     "Zamienia np. (+ x y (+ z w) (+ q 4) g) --> (+ x y z w q 4 g)."
     (cond
-        ((null args) ())				; Pusta lista.
+        ((null args) ())                            ; Pusta lista.
         ;((not (pair? args)) (list args))
-        ((funcall isit (car args))			; Operator pierwszego elementu
-	 						; taki sam jak aktualny, więc łączymy.
+        ((funcall isit (car args))                  ; Operator pierwszego elementu
+                                                    ; taki sam jak aktualny, więc łączymy.
             (append (flat isit (cdar args)) (flat isit (cdr args)))
         )
-        (t (cons (car args) (flat isit (cdr args))))))	; Operator pierwszego elementu inny
-							; niż aktualny, więc rekurencja dla kolejnych.
+        (t (cons (car args) (flat isit (cdr args))))))
+                                                    ; Operator pierwszego elementu inny
+                                                    ; niż aktualny, więc rekurencja dla kolejnych.
 
 (defun proper (addop ident args)
     "Dodaje prefixowy znak operacji jeśli lista nie jest pusta lub 1-elementowa."
     (cond
-        ((null args) ident)				; () --> 0 lub 1.
-        ((null (cdr args)) (car args))			; (x) --> x
-        (t (funcall addop args))))			; (x y z) --> (+/* x y z)
+        ((null args) ident)                         ; () --> 0 lub 1.
+        ((null (cdr args)) (car args))              ; (x) --> x
+        (t (funcall addop args))))                  ; (x y z) --> (+/* x y z)
 
 (defun is-zero-mult? (E)
     "Sprawdza czy iloczyn zawiera 0, żeby zamianić wyrażenie na 0."
@@ -298,11 +301,11 @@
 
 (defun replace-zero (expr)
     (if (null expr) ()
-        (cons (if (is-zero-mult? (car expr))		; Jeśli pierwszy element list zawiera
-							; zero, to zastąp pojedynczym zerem.
+        (cons (if (is-zero-mult? (car expr))        ; Jeśli pierwszy element list zawiera
+                                                    ; zero, to zastąp pojedynczym zerem.
                 0
-                (car expr))				; Wpp nic nie zmieniaj.
-            (replace-zero (cdr expr)))))		; Wołaj rekurencyjnie dla reszty listy.
+                (car expr))                         ; Wpp nic nie zmieniaj.
+            (replace-zero (cdr expr)))))            ; Wołaj rekurencyjnie dla reszty listy.
 
 ;------------------------------------------------------------------------------
 ; Przykłady różniczkowania i uproszczeń wyrażeń.
@@ -313,13 +316,13 @@
 ;   (d 'x '(* x x x))
 ;
 ; Wynik (bez uproszczenia):
-;   (+ (* X (+ (* X 1) (* (X) 1))) (* (* X X) 1))
+;   (+ (* X (+ (* X 1) (* X 1))) (* (* X X) 1))
 ;------
 ; Upraszczanie wyniku otrzymanego z różniczkowania f-cji x^3:
 ;   (simplify '(+ (* X (+ (* X 1) (* (X) 1))) (* (* X X) 1)))
 ;
 ; Wynik:
-;   (+ (* X (+ X (X))) (* X X))
+;   (+ (* X (+ X X)) (* X X))
 ;------
 ; Przykład usuwania zer:
 ;   (simplify '(+ (* 80 8 0) x (* 9 0 8)))
@@ -344,9 +347,7 @@
     "Rozwija funkcję wykładniczą. Np. e^(x+2) -> e^x*e^2"
     (cond
         ((null (first expr)) nil)
-        ((and (consp (first expr)) (equal 'exp (first (first expr))))
-            
-            )
+        ((and (consp (first expr)) (equal 'exp (first (first expr)))))
         ((consp (first expr)) (cons (expand (first expr)) (expand (rest expr))))
         (t (cons (first expr) (expand (rest expr))))
     ))
