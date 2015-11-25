@@ -38,7 +38,7 @@
 
 ;(in-package :infpre)
 
-(defvar *separators* (list '+ '- '* '/) "Default operators for the math macro") 
+(defvar *separators* (list '+ '- '* '/) "Default operators for the math macro")
 
 (defun remove-brackets (lst)
   "Reduces lists with just one item to the item itself"
@@ -100,9 +100,9 @@
 
 ;;;; Additional useful macros as interfaces to infix->prefix
 
-(defun !! (body)
+(defmacro !! (body)
     "Converts infix to prefix"
-    (infix->prefix body *separators*))
+    `(infix->prefix ,body *separators*))
 
 
 (defmacro macro-factorial (n)
@@ -119,17 +119,156 @@
         (10 (macro-factorial 10))
         (otherwise (* n (factorial (1- n))))))
 
-(defun plus (&rest args)
-    (apply '+ args))
+(defun calculable (expr)
+    (cond
+        ((numberp expr) t)
+        ((consp expr) (and (calculable (first expr)) (calculable (rest expr))))
+        (nil t)
+        (t nil)))
+
+(defun symbolic-reduce (rsym rfun expr)
+    (let* (
+        (partitioned (partition #'numberp expr))
+        (numbers (first partitioned))
+        (symbols (second partitioned))
+        (reduced (reduce rfun numbers))
+    )
+    ;(format t "~&~%~a~&~%~a" expr partitioned)
+    (if (null symbols)
+        reduced
+        (append `(,rsym ,reduced) symbols))))
+
+(defun partitionn (predicate list)
+    (loop for x in list
+        if (funcall predicate x) collect x into yes
+        else collect x into no
+        finally (return (values yes no))))
+
+(defun partition (predicate expr)
+    (reduce (lambda (a b)
+                (if (funcall predicate a)
+                        (push a (first b))
+                    (push a (second b)))
+                b)
+            expr
+            :initial-value (list nil nil)
+            :from-end t))
+
+(defun plus (&rest expr)
+    (symbolic-reduce '+ #'+ expr))
+
+(defun invert-sign(&rest args)
+    ;TODO
+    args)
 
 (defun minus (&rest args)
-    (apply '- args))
+    (plus (cons (first args) (invert-sign (rest args)))))
 
-(defun multiply (&rest args)
-    (apply '* args))
+(defun multiply (&rest expr)
+    (setf mult (symbolic-reduce '* #'* expr))
+    (cond
+        ((not (consp mult)) mult)
+        ((>= 1 (length mult)) mult)
+        ((equal (nth 1 mult) 0) 0)
+        (t mult)))
 
 (defun divide (&rest args)
     (apply '/ args))
+
+; Tworzy sume.
+(defun make-sum (x) (cons '+ x))
+
+; Tworzy iloczyn.
+(defun make-product (x) (cons '* x))
+
+; Sprawdzenie czy suma
+(defun sum? (E)
+  (and (pair? E) (equalp '+ (car E))))
+
+; Sprawdzenie czy iloczyn.
+(defun product? (E)
+  (and (pair? E) (equalp '* (car E))))
+
+(defun pair? (E)
+    (and (consp E) (equalp (length (cdr E)) 2)))
+
+; Top-level simplify.
+(defun simplify (E)
+  (cond
+    ((sum? E) (simplify-sum E))
+    ((product? E) (simplify-product E))
+    (t E)))
+
+; The sum and product simplifiers are mainly calls to simpl, with some
+; appropriate control parameters.  The parameters are the corresponding
+; identifier and make- function, and the identity for that operation.
+(defun simplify-sum (E)
+  (simpl #'sum? #'make-sum 0 E))
+
+(defun simplify-product (E)
+  (simpl #'product? #'make-product 1 E))
+
+(defun remove-identity (E ident)
+    (maplist
+        (lambda (x)
+            (if (not (equalp (first x) ident))
+                x
+                nil))
+        E))
+
+; Here's the simplifier.
+(defun simpl (isit? addop ident E)
+    ;(write-line "Simpl")
+    ;(write E)
+    ;(write-line "")
+    (let*
+        (
+          (parts (cdr E))               ; Terms or factors.
+          (sparts (mapcar #'simplify parts)) ; Terms or factors simplified.
+          (fparts (flat isit? sparts))  ; Simp (* x (* y z)) to (* x y z)
+          (zout (replace-zero fparts))  ; Reduce (* ... 0 ...) to 0.
+          (unid (remove-identity zout ident))
+                                        ; Remove identity (0 for + 1 for *)
+        )
+        (proper addop ident unid))) ; Cleanup; see below.
+
+; The flat function looks for subexpressions of the same operator and merges
+; them in.  For instance, change (+ x y (+ z w) (+ q 4) g) to
+; (+ x y z w q 4 g).
+(defun flat (isit args)
+  (cond
+    ((null args) ())                   ; Empty is empty.
+    ((not (pair? args)) (list args))    ; I don't see how this happens, but ok.
+    ((isit (car args))                  ; If first arg same op, combine.
+      (append (flat isit (cdar args)) (flat isit (cdr args)))
+    )
+    (t  ; Default: go on to the next.
+        (cons (car args) (flat isit (cdr args))))))
+
+; This simply adds the operator back to a list of terms or factors, but it
+; avoids turning the empty list into (+) or the singleton list int (* 17).
+(defun proper (addop ident args)
+  (cond
+    ((null args) ident)            ; () becomes 0 or 1.
+    ((null (cdr args)) (car args)) ; (x) becomes x
+    (t (addop args))))              ; (x y z) to (+/* x y z)
+
+; See if the expression is a multiplication containing zero (hence equal
+; to zero).
+(defun is-zero-mult? (E)
+    (and
+        (product? E)
+        (some (lambda (item) (equal 0 item)) E)
+    ))
+    
+
+; Replace zero-valued multiply items with zero.  This works only on
+; the top level.
+(defun replace-zero (expr)
+  (if (null expr) ()
+    (cons (if (is-zero-mult? (car expr)) 0 (car expr))
+      (replace-zero (cdr expr)))))
+
 
 (defun rename-one (item)
     (case item
@@ -143,45 +282,58 @@
 
 (defun rename-functions (expr)
     "Changes symbols +, -, * and / to respective functions"
-    (if (null expr)
-        nil
-        (let ((item (first expr)))
-            (if (eq item 'quote)
-                (first (rename-functions (rest expr)))
-                (if (consp item)
-                    (cons (rename-functions item) (rename-functions (rest expr)))
-                    (cons (rename-one item) (rename-functions (rest expr))))))))
+    (cond
+        ((null expr) nil)
+        ;((equal (first expr) 'quote) (first (rename-functions (rest expr))))
+        ((consp (first expr)) (cons (rename-functions (first expr)) (rename-functions (rest expr))))
+        (t (cons (rename-one (first expr)) (rename-functions (rest expr))))
+    ))
 
 (defun precalc (expr)
     "Calculates nested expressions inside this one."
-    (if (subtypep (type-of (first expr)) 'null)
-        nil
-        (if (consp (first expr))
-            (cons (calc (first expr)) (precalc (rest expr)))
-            (cons (first expr) (precalc (rest expr))))))
+    ;(write-line "Precalc")
+    ;(write expr)
+    ;(write-line "")
+    (cond
+        ((null (first expr)) nil)
+        ((consp (first expr)) (cons (calc (first expr)) (precalc (rest expr))))
+        (t (cons (first expr) (precalc (rest expr))))
+    ))
 
 (defun postcalc (expr)
     "Calculates this expression, assuming it has no nested expressions."
+    ;(write-line "Postcalc")
     ;(write expr)
-    (write-line "")
-    (write (first expr))
-    (write-line "")
-    (write (rest expr))
-    (write-line "")
-    (let ((frst (first expr)))
-        (if (and (subtypep (type-of frst) 'function) (not (null (rest expr))) )
-            (apply frst (rest expr))
-            expr)))
+    ;(write-line "")
+    ;(write (first expr))
+    ;(write-line "")
+    ;(write (rest expr))
+    ;(write-line "")
+    (setf frst (first expr))
+    (cond
+        ((null (rest expr)) expr)
+        ;((eq frst 'quote) (postcalc (rest expr)))
+        ((subtypep (type-of frst) 'function) (apply frst (rest expr)))
+        ((subtypep (type-of (rename-one frst)) 'function) (apply (rename-one frst) (rest expr)))
+        ((and (consp frst) (eq (length frst) 1)) (car frst))
+        (t expr)
+    ))
 
 (defun calc (expr)
+    ;(postcalc (simplify (precalc (simplify expr)))))
     (postcalc (precalc expr)))
+
+(defun calc-print (expr)
+    (setf inlined (!! expr))
+    ;(setf renamed (rename-functions inlined))
+    (setf renamed inlined)
+    (setf calced (calc renamed))
+    (format t "~&~%~a~&~%~a~&~%~a~&~%~a~%" expr inlined renamed calced))
 
 (defun main-loop ()
     (write-line "Input formula (or q to exit)")
     (loop while (setq inp (get-input))
-        do  (write-line "")
-            (write (calc (rename-functions (!! inp))))
-            (write-line "")))
+        do (calc-print inp)))
 
 (defun get-input ()
     (let ((inp (read)))
@@ -189,49 +341,13 @@
             nil
             inp)))
 
-(main-loop)
-;(trace !!)
-;(trace infix->prefix)
-;(trace rename-functions)
-;(trace calc)
-;(trace precalc)
-;(trace postcalc)
-;(compile 'factorial)
-;(compile 'plus)
-;(compile 'multiply)
-;(compile 'precalc)
-;(compile 'postcalc)
+(makunbound '*ex*)
+(defvar *ex* '(3 * 2 * (factorial 5 + (0 * 'x * (0 * 'x))) + 2))
 
-;(makunbound '*example_list*)
-;(defvar *example_list* '(3 + (2 + 5) * 2 * 1 * 'factorial 5 * 2))
-;(defvar *example_list* '(3 + ('factorial 5) * 2))
-;(write *example_list*)
-;(write-line "")
-;(write (infix->prefix *example_list* *separators*))
-;(write-line "")
-;(let ((lll '(3 + (2 + 5) * 2)))
-;    (write (!! lll)))
-;(write-line "")
-;(write (macroexpand '(!! *example_list* + *example_list* * 2)))
-;(write-line "")
-;(write (macroexpand '(!! (let ((a 42)) a - 2 * 2 * 10))))
-;(write-line "")
-;(write (macroexpand '(macro-factorial 7)))
-;(write-line "")
-;(write (macro-factorial 7))
-;(write-line "")
-;(let ((lll (read)))
-;(let ((lll *example_list*))
-    ;(write (!! lll))
-    ;(write-line "")
-    ;(write (!! lll))
-    ;(write (calc (!! lll)))
-    ;(write (rename-functions lll))
-    ;(write (rename-functions (!! lll)))
-    ;(write (calc (rename-functions (!! lll))))
-    ;(write (calc (!! lll)))
-    ;(write (calc (rename-simple (!! lll))))
-;)
-;(write-line "")
-;(format t "~a~%" *example_list*)
-;(format t "~a~%" (!! *example_list*))
+;(trace postcalc)
+;(trace precalc)
+(trace multiply)
+(trace symbolic-reduce)
+
+(calc-print *ex*)
+;(main-loop)
