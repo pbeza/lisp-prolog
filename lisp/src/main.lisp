@@ -438,17 +438,6 @@
 
 ; Funkcja rekurencyjna (J.D.)
 
-(defun rename-functions (expr)
-    "Zamienia +, -, * i / na równoważne funkcje."
-    (cond
-        ((null expr) nil)
-        ;((equal (first expr) 'quote) (first (rename-functions (rest expr))))
-        ((consp (first expr)) (cons (rename-functions (first expr)) (rename-functions (rest expr))))
-        (t (cons (rename-one (first expr)) (rename-functions (rest expr))))
-    ))
-
-; Funkcja rekurencyjna (J.D.)
-
 (defun precalc (expr)
     "Oblicza zagnieżdżone wyrażenia wewnątrz expr."
     ;(write-line "Precalc")
@@ -513,7 +502,7 @@
             inp)))
 
 (makunbound '*ex*)
-(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x * (0 * x))) + 2 + x + (factorial x) + (d x (* x x x))))
+(defvar *ex* '(3 * 2 * (factorial 5 + (0 * x)) + (factorial x) + (d x (* x x))))
 
 ;(trace postcalc)
 ;(trace precalc)
