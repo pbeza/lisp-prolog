@@ -90,11 +90,11 @@
 
 ; Makro rekurencyjne (P.B.)
 
-(defmacro macro-sum (a &rest b)
+(defmacro macro-mul (a &rest b)
     "Oblicza iloczyn wszystkich elementów."
     (if (null b)
         a
-        ``(* ,,a ,(macro-sum ,@b))))
+        ``(* ,,a ,(macro-mul ,@b))))
 
 ; Makro rekurencyjne (P.B.)
 
@@ -118,7 +118,7 @@
     "Oblicza element maksymalny."
     (if (null b)
         a
-        (let ((tmp `(macro-min ,@b))) ``(if (> ,,a ,,tmp) ,,a ,,tmp))))
+        (let ((tmp `(macro-max ,@b))) ``(if (> ,,a ,,tmp) ,,a ,,tmp))))
 
 ; Przykłady wywołań:
 ;   (eval (macro-sum '(* x y) '(+ z u) 'w))
@@ -163,11 +163,12 @@
         ((null ,expr) t)
         ((consp ,expr) (and (numberp (first ,expr)) (calculable-macro (rest ,expr))))
         (t nil)))
-;Przykład:
-;(calculable-macro '(1 2 3 4 5))
-;ma dać T
-;(calculable-macro '(1 2 3 x 4 5))
-;ma dać nil
+
+; Przykład:
+;   (calculable-macro '(1 2 3 4 5))
+; ma dać T
+;   (calculable-macro '(1 2 3 x 4 5))
+; ma dać NIL
 
 (defun symbolic-reduce (rsym rfun expr initial)
     (let* (
@@ -197,9 +198,9 @@
         ,ret
         (reduce-macro ,rfun (rest ,numbers) (funcall ,rfun (first ,numbers) ,ret))))
 
-;Przykład:
-;(reduce-macro #'+ '(1 2 3 4 5) 0)
-;ma dać 15
+; Przykład:
+;   (reduce-macro #'+ '(1 2 3 4 5) 0)
+; ma dać 15
 
 (defun partition (predicate expr)
     "Dzieli listę na liczby i całą resztę (symbole, funkcje, wyrażenia)."
@@ -226,9 +227,11 @@
             ((null item) `(list ,values ,symbols))
             ((funcall predicate item) (partition-inner predicate (rest ,expr) ,symbols (append ,values (list item))))
             (t (partition-inner predicate (rest ,expr) (append ,symbols (list item)) ,values)))))
-;Przykład:
-;(pm #'numberp '(1 2 3 x y z (aaa) (1 2 3) ))
-;ma dać ((1 2 3) (X Y Z (AAA) (1 2 3)))
+
+; Przykład:
+;   (pm #'numberp '(1 2 3 x y z (aaa) (1 2 3) ))
+; ma dać:
+;   ((1 2 3) (X Y Z (AAA) (1 2 3)))
 
 (defun plus (&rest expr)
     (symbolic-reduce '+ #'+ expr 0))
@@ -359,7 +362,6 @@
     "Zamienia np. (+ x y (+ z w) (+ q 4) g) --> (+ x y z w q 4 g)."
     (cond
         ((null args) ())                            ; Pusta lista.
-        ;((not (pair? args)) (list args))
         ((funcall isit (car args))                  ; Operator pierwszego elementu
                                                     ; taki sam jak aktualny, więc łączymy.
             (append (flat isit (cdar args)) (flat isit (cdr args)))
@@ -367,6 +369,17 @@
         (t (cons (car args) (flat isit (cdr args))))))
                                                     ; Operator pierwszego elementu inny
                                                     ; niż aktualny, więc rekurencja dla kolejnych.
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-flat (isit args)
+    "Odpowednik w postaci makra funkcji flat.
+    Np. (macro-flat #'sum? '(+ x y (+ z w) (+ q 4) g))"
+    `(cond
+        ((null ,args) ())
+        ((funcall ,isit (car ,args))
+            (append (macro-flat ,isit (cdar ,args)) (macro-flat ,isit (cdr ,args)))
+        )
+        (t (cons (car ,args) (macro-flat ,isit (cdr ,args))))))
 
 (defun proper (addop ident args)
     "Dodaje prefixowy znak operacji jeśli lista nie jest pusta lub 1-elementowa."
@@ -382,13 +395,18 @@
         (some (lambda (item) (equal 0 item)) E)
     ))
 
+; Funkcja rekurencyjna (P.B.)
+
 (defun replace-zero (expr)
+    "Zamienia np. ((* 9 0 3) 4 (* 0 10 0 1))) na (0 4 0).
+    Np. (replace-zero '((* 9 0 3) 4 (* 0 10 0 1)))"
     (if (null expr) ()
         (cons (if (is-zero-mult? (car expr))        ; Jeśli pierwszy element list zawiera
                                                     ; zero, to zastąp pojedynczym zerem.
                 0
                 (car expr))                         ; Wpp nic nie zmieniaj.
             (replace-zero (cdr expr)))))            ; Wołaj rekurencyjnie dla reszty listy.
+
 
 ;------------------------------------------------------------------------------
 ; Przykłady różniczkowania i uproszczeń wyrażeń.
@@ -457,9 +475,11 @@
         ((consp (first ,expr)) (cons (calc (first ,expr)) (precalc-macro (rest ,expr))))
         (t (cons (first ,expr) (precalc-macro (rest ,expr))))
     ))
-;Przykład:
-;(precalc-macro '(* 2 (+ 1 2)))
-;ma dać (* 2 3)
+
+; Przykład:
+;   (precalc-macro '(* 2 (+ 1 2)))
+; ma dać:
+;   (* 2 3)
 
 (defun postcalc (expr)
     "Oblicza wyrażenie expr zakładając, że nie ma ono zagnieżdżonych wyrażeń."
