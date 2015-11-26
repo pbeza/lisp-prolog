@@ -103,10 +103,25 @@
 ; Funkcja rekurencyjna (J.D.)
 
 (defun calculable (expr)
+    "Sprawdza czy wyrażenie da się policzyć numerycznie, tzn. czy zawiera same liczby"
     (cond
         ((numberp expr) t)
-        ((consp expr) (and (calculable (first expr)) (calculable (rest expr))))
+        ((consp expr) (and (numberp (first expr)) (calculable (rest expr))))
         (t nil)))
+
+; Makro rekurencyjne (J.D.)
+
+(defmacro calculable-macro (expr)
+    `(cond
+        ((numberp ,expr) t)
+        ((null ,expr) t)
+        ((consp ,expr) (and (numberp (first ,expr)) (calculable-macro (rest ,expr))))
+        (t nil)))
+;Przykład:
+;(calculable-macro '(1 2 3 4 5))
+;ma dać T
+;(calculable-macro '(1 2 3 x 4 5))
+;ma dać nil
 
 (defun symbolic-reduce (rsym rfun expr initial)
     (let* (
@@ -123,10 +138,22 @@
 ; Funkcja rekurencyjna (J.D.)
 
 (defun reduce-inner (rfun numbers ret)
+    "Aplikuje dwuargumentową funkcję na kolejnych parach (ret (car numbers)) i zwraca ret."
     (setf item (first numbers))
     (if (null item)
         ret
         (reduce-inner rfun (rest numbers) (funcall rfun item ret))))
+
+; Makro rekurencyjne (J.D.)
+
+(defmacro reduce-macro (rfun numbers ret)
+    `(if (null (first ,numbers))
+        ,ret
+        (reduce-macro ,rfun (rest ,numbers) (funcall ,rfun (first ,numbers) ,ret))))
+
+;Przykład:
+;(reduce-macro #'+ '(1 2 3 4 5) 0)
+;ma dać 15
 
 (defun partition (predicate expr)
     "Dzieli listę na liczby i całą resztę (symbole, funkcje, wyrażenia)."
@@ -144,12 +171,18 @@
 (defun pm (predicate expr)
     (partition-macro predicate expr nil nil))
 
+; Makro rekurencyjne (J.D.)
+
 (defmacro partition-macro (predicate expr symbols values)
+    "To samo co partition-inner, tylko w makrze"
     `(let ((item (first ,expr)))
         (cond
             ((null item) `(list ,values ,symbols))
             ((funcall predicate item) (partition-inner predicate (rest ,expr) ,symbols (append ,values (list item))))
             (t (partition-inner predicate (rest ,expr) (append ,symbols (list item)) ,values)))))
+;Przykład:
+;(pm #'numberp '(1 2 3 x y z (aaa) (1 2 3) ))
+;ma dać ((1 2 3) (X Y Z (AAA) (1 2 3)))
 
 (defun plus (&rest expr)
     (symbolic-reduce '+ #'+ expr 0))
@@ -345,17 +378,6 @@
 ; Podstawowa funkcjonalność kalkulatora.
 ;------------------------------------------------------------------------------
 
-
-
-(defun expand-exp (expr)
-    "Rozwija funkcję wykładniczą. Np. e^(x+2) -> e^x*e^2"
-    (cond
-        ((null (first expr)) nil)
-        ((and (consp (first expr)) (equal 'exp (first (first expr)))))
-        ((consp (first expr)) (cons (expand (first expr)) (expand (rest expr))))
-        (t (cons (first expr) (expand (rest expr))))
-    ))
-
 (defun rename-one (item)
     "Mapowanie operacja -> funkcja."
     (case item
@@ -391,6 +413,18 @@
         ((consp (first expr)) (cons (calc (first expr)) (precalc (rest expr))))
         (t (cons (first expr) (precalc (rest expr))))
     ))
+
+; Makro rekurencyjne (J.D.)
+
+(defmacro precalc-macro (expr)
+    `(cond
+        ((null (first ,expr)) nil)
+        ((consp (first ,expr)) (cons (calc (first ,expr)) (precalc-macro (rest ,expr))))
+        (t (cons (first ,expr) (precalc-macro (rest ,expr))))
+    ))
+;Przykład:
+;(precalc-macro '(* 2 (+ 1 2)))
+;ma dać (* 2 3)
 
 (defun postcalc (expr)
     "Oblicza wyrażenie expr zakładając, że nie ma ono zagnieżdżonych wyrażeń."
