@@ -14,6 +14,15 @@
       lst
       (remove-brackets (car lst))))
 
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-remove-brackets (lst)
+    "Redukuje listę z jednym elementem do tego elementu."
+    `(if (or (not (consp ,lst))
+            (not (null (cdr ,lst))))
+      ,lst
+      (macro-remove-brackets (car ,lst))))
+
 (defun separate-list (lst separator test)
     "Zwraca listę podlist poprzedzonych separatoremi, wyrzucając separatory infixowe."
     (if (not (consp lst))
@@ -79,6 +88,43 @@
 ; Operacje matematyczne.
 ;------------------------------------------------------------------------------
 
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-sum (a &rest b)
+    "Oblicza iloczyn wszystkich elementów."
+    (if (null b)
+        a
+        ``(* ,,a ,(macro-sum ,@b))))
+
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-sum (a &rest b)
+    "Oblicza sumę wszystkich elementów."
+    (if (null b)
+        a
+        ``(+ ,,a ,(macro-sum ,@b))))
+
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-min (a &rest b)
+    "Oblicza element minimalny."
+    (if (null b)
+        a
+        (let ((tmp `(macro-min ,@b))) ``(if (< ,,a ,,tmp) ,,a ,,tmp))))
+
+; Makro rekurencyjne (P.B.)
+
+(defmacro macro-max (a &rest b)
+    "Oblicza element maksymalny."
+    (if (null b)
+        a
+        (let ((tmp `(macro-min ,@b))) ``(if (> ,,a ,,tmp) ,,a ,,tmp))))
+
+; Przykłady wywołań:
+;   (eval (macro-sum '(* x y) '(+ z u) 'w))
+;   (macro-min 8 80 33 2 99)
+;   (setf x 9 y 8 z 7 u 6 w 20)
+;   (eval (macro-min '(* x y) '(+ z u) 'w))
 
 ; Makro rekurencyjne (J.D.)
 
