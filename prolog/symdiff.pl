@@ -12,13 +12,13 @@ process(q) :- !.
  * 4. Zapętl.
  */
 process(Exp) :-
-   write('Różniczkuj po zmiennej: '),
+   write('Rozniczkuj po zmiennej: '),
    read(Wrt),
-   write('Która pochodna? (> 0): '),
+   write('Ktora pochodna? (> 0): '),
    read(Nth),
-   compute(Exp, Wrt, Sdiff),
-   /*compute(Exp, Wrt, Nth, Sdiff),*/
-   write('Pochodna '), write(Wrt),
+   /*compute(Exp, Wrt, Sdiff),*/
+   compute(Exp, Wrt, Nth, Sdiff),
+   write(Nth), write(' pochodna po '), write(Wrt),
    write(' to '),
    write(Sdiff), nl, nl,
    symdiff.
@@ -27,15 +27,19 @@ compute(Exp, Wrt, Sdiff) :-
    diff(Exp, Wrt, Diff),
    simplify(Diff, Sdiff).
 
-/*
 compute(Exp, Wrt, Nth, Ndiff) :-
+   integer(Nth),
+   Nth > 0,
    diff(Exp, Wrt, Diff),
    simplify(Diff, Sdiff),
    Nthdec is Nth - 1,
-   Ndiff is Sdiff,
-   Nthdec > 0,
    compute(Sdiff, Wrt, Nthdec, Ndiff).
-*/
+
+compute(Exp, _Wrt, 0, Ndiff) :-
+    Ndiff = Exp.
+
+compute(_Exp, _Wrt, Nth, _Ndiff) :-
+   write('Error: Nth not an integer '), write(Nth).
 
 /*
  * Różniczkowanie x po x to zawsze 1.
