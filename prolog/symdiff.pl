@@ -39,7 +39,7 @@ compute(Exp, _Wrt, 0, Ndiff) :-
     Ndiff = Exp.
 
 compute(_Exp, _Wrt, Nth, _Ndiff) :-
-   write('Error: Nth not an integer '), write(Nth).
+   write('Blad: krotnosc pochodnej nie calkowita '), write(Nth).
 
 /*
  * Różniczkowanie x po x to zawsze 1.
