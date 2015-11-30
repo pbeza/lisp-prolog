@@ -14,12 +14,28 @@ process(q) :- !.
 process(Exp) :-
    write('Różniczkuj po zmiennej: '),
    read(Wrt),
-   diff(Exp, Wrt, Diff),
-   simplify(Diff, Sdiff), nl,
+   write('Która pochodna? (> 0): '),
+   read(Nth),
+   compute(Exp, Wrt, Sdiff),
+   /*compute(Exp, Wrt, Nth, Sdiff),*/
    write('Pochodna '), write(Wrt),
    write(' to '),
    write(Sdiff), nl, nl,
    symdiff.
+
+compute(Exp, Wrt, Sdiff) :-
+   diff(Exp, Wrt, Diff),
+   simplify(Diff, Sdiff).
+
+/*
+compute(Exp, Wrt, Nth, Ndiff) :-
+   diff(Exp, Wrt, Diff),
+   simplify(Diff, Sdiff),
+   Nthdec is Nth - 1,
+   Ndiff is Sdiff,
+   Nthdec > 0,
+   compute(Sdiff, Wrt, Nthdec, Ndiff).
+*/
 
 /*
  * Różniczkowanie x po x to zawsze 1.
@@ -279,32 +295,6 @@ simplify(X^A, C) :-
  * Zabezpieczenie żeby "dziwne" wyrażenia nie spowodowały błędów.
  */
 simplify(X, X).
-
-/*
- * Liczenie wartości: wyrażenie, symbol, wartość symbolu, wynik.
- */
-calc(X, A, a, B, b, C, c, result) :-
-    calc(X, A, a, r1),
-    calc(r1, B, b, r2),
-    calc(r2, C, c, result).
-
-calc(X, A, a, B, b, result) :-
-    calc(X, A, a, r1),
-    calc(r1, B, b, result).
-
-/*
- * Wartość stałej jest znana.
- */
-calc(X, _A, a, result) :-
-    numeric(X),
-    result is X.
-
-/*
- * Wartość symbolu o danej wartości.
- */
-calc(X, A, a, result) :-
-    X = A,
-    result is a.
 
 /*
  * Atom jest liczbą kiedy jest liczbą całkowitą lub zmiennoprzecinkową.
