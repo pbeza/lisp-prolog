@@ -166,7 +166,7 @@ common_ancestor(X, Y, Z) :-
 % X has ancestor without sibling.
 has_ancestor_without_sibling(X) :-
   ancestor(Y, X),
-  not(sibling(Y, _)).
+  \+ sibling(Y, _).
 
 % X has dead ancestor.
 has_dead_ancestor(X) :-
@@ -205,7 +205,7 @@ alive_age(X, Y) :-
 % X is the oldest alive person.
 alive_oldest(X) :-
   alive_age(X, Y),
-  not(alive_age(_, Z), Z>Y).
+  \+ (alive_age(_, Z), Z > Y).
 
 % X is adult. Dead people are NOT adult.
 adult(X) :-
