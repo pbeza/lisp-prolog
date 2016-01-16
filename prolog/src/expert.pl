@@ -18,7 +18,7 @@ parent(mildred, mary).
 parent(ron, yoda).
 parent(yoda, something).
 
-% chester is man.
+% Who is man?
 man(chester).
 man(irvin).
 man(clarence).
@@ -26,21 +26,36 @@ man(ron).
 man(ken).
 man(charlie).
 
-% mildred is woman.
+% Who is woman?
 woman(mildred).
 woman(shirley).
 woman(sharon).
 woman(mary).
+woman(chester_spouse).
+woman(irvin_spouse).
+woman(clarence_spouse).
 
-% chester was born in 1940.
+% Who married who?
+spouses(chester, chester_spouse).
+spouses(irvin, irvin_spouse).
+spouses(clarence, clarence_spouse).
+
+% When who was born?
 born(chester, 1940).
 born(irvin, 1970).
 born(clarence, 1975).
+born(mildred, 1969).
+born(ron, 1995).
+born(ken, 1996).
 
-% chester died in 1990.
+% When who died?
 death(chester, 1990).
 death(irvin, 2000).
 death(clarence, 2010).
+
+% Constants.
+current_year(2016).
+adult_years(18).
 
 %
 % Rules.
@@ -140,7 +155,7 @@ ancestor(X, Y) :-
   parent(X, Y).
 
 ancestor(X, Y) :-
-  ancestor(X, Z),
+  parent(X, Z),
   ancestor(Z, Y).
 
 % X is Y's and Z's common ancestor.
@@ -162,3 +177,41 @@ has_dead_ancestor(X) :-
 exist_person_with_XY_ancestors(X, Y) :-
   ancestor(X, U),
   ancestor(Y, U).
+
+% Does X is dead?
+is_dead(X) :-
+  death(X, _).
+
+% Does X is not dead (yet).
+is_alive(X) :-
+  not(is_dead(X)).
+
+% X had Y years old when died.
+death_age(X, Y) :-
+  is_dead(X),
+  born(X, U),
+  death(X, W),
+  Y is W-U.
+
+% X is alive and has Y years old.
+alive_age(X, Y) :-
+  is_alive(X),
+  born(X, U),
+  current_year(C),
+  Y is C-U.
+
+% X is the oldest alive person.
+alive_oldest(X) :-
+  alive_age(X, Y),
+  not(alive_age(_, Z), Z>Y).
+
+% X is adult. Dead people are NOT adult.
+adult(X) :-
+  alive_age(X, Y),
+  adult_years(Z),
+  Y>Z.
+
+% X is adult without spouse.
+adult_without_spouse(X) :-
+  adult(X),
+  not(spouses(X, _)).
