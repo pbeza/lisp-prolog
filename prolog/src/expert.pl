@@ -185,7 +185,8 @@ is_dead(X) :-
 % Is X alive?
 % X is alive when X is born and is not dead
 is_alive(X) :-
-  born(X, _), \+ is_dead(X).
+  born(X, _),
+  \+ is_dead(X).
 
 % X had Y years old when died.
 death_age(X, Y) :-
@@ -215,4 +216,4 @@ adult(X) :-
 % X is adult without spouse.
 adult_without_spouse(X) :-
   adult(X),
-  not(spouses(X, _)).
+  \+ spouses(X, _).
