@@ -182,9 +182,10 @@ exist_person_with_XY_ancestors(X, Y) :-
 is_dead(X) :-
   death(X, _).
 
-% Does X is not dead (yet).
+% Is X alive?
+% X is alive when X is born and is not dead
 is_alive(X) :-
-  not(is_dead(X)).
+  born(X, _), \+ is_dead(X).
 
 % X had Y years old when died.
 death_age(X, Y) :-
