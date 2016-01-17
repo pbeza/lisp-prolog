@@ -329,27 +329,27 @@ add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE, DEATH_YEAR) :-
   assert(death(DEATH_YEAR)).
 
 menu :-
-  write("***************"), nl,
-  write("* 1. Add alive man without spouse."), nl,
-  write("* 2. Add alive woman without spouse."), nl,
-  write("* 3. Add alive man with spouse."), nl,
-  write("* 4. Add alive woman with spouse."), nl,
-  write("* 5. Add dead man with spouse."), nl,
-  write("* 6. Add dead woman with spouse."), nl,
-  write("Please, select option number."), nl,
+  write('***************'), nl,
+  write('* 1. Add alive man without spouse.'), nl,
+  write('* 2. Add alive woman without spouse.'), nl,
+  write('* 3. Add alive man with spouse.'), nl,
+  write('* 4. Add alive woman with spouse.'), nl,
+  write('* 5. Add dead man with spouse.'), nl,
+  write('* 6. Add dead woman with spouse.'), nl,
+  write('Please, select option number.'), nl,
   read(CHOICE), nl,
   process(CHOICE, NAME),
   write(NAME),
-  write(" successfully added."), nl, nl.
+  write(' successfully added.'), nl, nl.
 
 process_(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
-  write("Enter name:"), nl,
+  write('Enter name:'), nl,
   read(NAME), nl,
-  write("Name of the first parent:"), nl,
+  write('Name of the first parent:'), nl,
   read(PARENT1), nl,
-  write("Name of the second parent:"), nl,
+  write('Name of the second parent:'), nl,
   read(PARENT2), nl,
-  write("Birth year:"),nl,
+  write('Birth year:'),nl,
   read(BIRTH_YEAR), nl.
 
 process(1, NAME) :-
@@ -362,21 +362,21 @@ process(2, NAME) :-
 
 process(3, NAME) :-
   process(1, NAME),
-  write("Name of the spouse:"), nl,
+  write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
   assert(spouses(NAME, SPOUSE_NAME)).
 
 process(4, NAME) :-
   process(2, NAME),
-  write("Name of the spouse:"), nl,
+  write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
   assert(spouses(NAME, SPOUSE_NAME)).
 
 process(5, NAME) :-
   process_(NAME, PARENT1, PARENT2, BIRTH_YEAR),
-  write("Name of the spouse:"), nl,
+  write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
-  write("Death year:"), nl,
+  write('Death year:'), nl,
   read(DEATH_YEAR), nl,
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
 
