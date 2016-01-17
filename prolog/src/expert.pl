@@ -380,10 +380,12 @@ process(5, NAME) :-
   read(DEATH_YEAR), nl,
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
 
-remove_man(NAME) :-
-  man(NAME),
-  retract(man(NAME)).
-
-remove_woman(NAME) :-
-  woman(NAME),
-  retract(woman(NAME)).
+remove_person(NAME) :-
+  retract(parent(_, NAME)),
+  retract(parent(NAME, _)),
+  retract(man(NAME)),
+  retract(woman(NAME)),
+  retract(spouses(NAME, _)),
+  retract(spouses(_, NAME)),
+  retract(born(NAME, _)),
+  retract(death(NAME, _)).
