@@ -379,3 +379,14 @@ process(5, NAME) :-
   write("Death year:"), nl,
   read(DEATH_YEAR), nl,
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
+
+remove_person(NAME) :-
+  retract(NAME).
+
+remove_man(NAME) :-
+  man(NAME),
+  remove_person(NAME).
+
+remove_woman(NAME) :-
+  woman(NAME),
+  remove_person(NAME).
