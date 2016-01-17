@@ -2,6 +2,21 @@
 % Facts about family tree.
 %
 
+:- dynamic(add_man/4).
+:- dynamic(add_man/5).
+:- dynamic(add_man/6).
+:- dynamic(add_woman/4).
+:- dynamic(add_woman/5).
+:- dynamic(add_woman/6).
+:- dynamic(parent/2).
+:- dynamic(man/1).
+:- dynamic(woman/1).
+:- dynamic(spouses/2).
+:- dynamic(born/2).
+:- dynamic(death/2).
+:- dynamic(current_year/1).
+:- dynamic(adult_years/1).
+
 % TODO Manually draw genealogy tree to easily figure out who is who.
 
 % Who is whose parent?
@@ -283,3 +298,32 @@ part_of_the_same_family_with_affinity(X, Y) :-
 nth_or_less_degree_ancestor(X, Y, W) :-
   ancestor(Y, X, Z),
   W>=Z.
+
+add_person(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
+  assert(parent(PARENT1, NAME)),
+  assert(parent(PARENT2, NAME)),
+  assert(born(NAME, BIRTH_YEAR)).
+
+add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
+  add_person(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  assert(man(NAME)).
+
+add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
+  add_person(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  assert(woman(NAME)).
+
+add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE) :-
+  add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  assert(spouses(NAME, SPOUSE)).
+
+add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE) :-
+  add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  assert(spouses(NAME, SPOUSE)).
+
+add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE, DEATH_YEAR) :-
+  add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE),
+  assert(death(DEATH_YEAR)).
+
+add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE, DEATH_YEAR) :-
+  add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE),
+  assert(death(DEATH_YEAR)).
