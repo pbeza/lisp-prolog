@@ -164,7 +164,7 @@ aunt(X, Y) :-
 % X is Y's aunt.
 aunt(X, Y) :-
   woman(X),
-  spouse(X, W),
+  spouses(X, W),
   sibling(W, Z),
   parent(Z, Y).
 
@@ -177,18 +177,19 @@ uncle(X, Y) :-
 % X is Y's uncle.
 uncle(X, Y) :-
   man(X),
-  spouse(X, W),
+  spouses(X, W),
   sibling(W, Z),
   parent(Z, Y).
 
-% X is Y's ancestor.
+% X is Y's ancestor with degree of relationship equal 1.
 ancestor(X, Y, 1) :-
   parent(X, Y).
 
-% X is Y's ancestor.
-ancestor(X, Y, W+1) :-
+% X is Y's ancestor with degree of relationship equal W.
+ancestor(X, Y, W) :-
   parent(X, Z),
-  ancestor(Z, Y, W).
+  ancestor(Z, Y, U),
+  W is U+1.
 
 % X is Y's and Z's common ancestor.
 common_ancestor(X, Y, Z) :-
@@ -256,7 +257,29 @@ adult_without_spouse(X) :-
   alive_adult(X),
   \+ spouses(X, _).
 
-% X and Y are part of the same living family.
-part_of_the_same_living_family(X, Y) :-
+% X and Y are part of the same living family. Affinity is excluded. So called consanguinity or bloodline.
+part_of_the_same_living_family_without_affinity(X, Y) :-
   common_ancestor(Z, X, Y),
   is_alive(Z).
+
+% X and Y are part of the same living family. Affinity is included.
+part_of_the_same_family_with_affinity(X, Y) :-
+  spouses(X, Y).
+
+% X and Y are part of the same living family. Affinity is included.
+part_of_the_same_family_with_affinity(X, Y) :-
+  spouses(U, W),
+  ancestor(U, X, _),
+  ancestor(W, Y, _).
+
+% X and Y are part of the same living family. Affinity is included.
+% Depending on the family's definition it should be commented out or not.
+part_of_the_same_family_with_affinity(X, Y) :-
+  spouses(U, W),
+  ancestor(X, U, _),
+  ancestor(Y, W, _).
+
+% X is descendant of Y with degree of relationship less or equal W.
+nth_or_less_degree_ancestor(X, Y, W) :-
+  ancestor(Y, X, Z),
+  W>=Z.
