@@ -399,8 +399,7 @@ process(8, NAME) :-
   parent(X, NAME),
   write('Parents: '),
   write(X), nl,
-  spouses(NAME, S),
-  %spouses(S, NAME), % TODO problem here
+  (spouses(NAME, S); spouses(S, NAME)),
   write('Spouse: '),
   write(S), nl,
   death(NAME, D),
