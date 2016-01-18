@@ -11,7 +11,7 @@
 :- dynamic(parent/2).
 :- dynamic(man/1).
 :- dynamic(woman/1).
-:- dynamic(spouses/2).
+:- dynamic(spouse/2).
 :- dynamic(born/2).
 :- dynamic(death/2).
 :- dynamic(current_year/1).
@@ -70,12 +70,12 @@ woman(yoda_spouse).
 
 % Who married who?
 
-spouses(chester, chester_spouse).
-spouses(irvin, irvin_spouse).
-spouses(clarence, clarence_spouse).
-spouses(mildred, mildred_spouse).
-spouses(ron, ron_spouse).
-spouses(yoda, yoda_spouse).
+spouse(chester, chester_spouse).
+spouse(irvin, irvin_spouse).
+spouse(clarence, clarence_spouse).
+spouse(mildred, mildred_spouse).
+spouse(ron, ron_spouse).
+spouse(yoda, yoda_spouse).
 
 % When who was born?
 
@@ -106,6 +106,12 @@ adult_years(18).
 %
 % Rules.
 %
+
+% Helper: X and Y are spouses if X is Y's spouse or Y is X's spouse
+spouses(X, Y) :-
+  spouse(X, Y).
+spouses(X, Y) :-  
+  spouse(Y, X).
 
 % X is Y's father.
 father(X, Y) :-
@@ -299,6 +305,10 @@ nth_or_less_degree_ancestor(X, Y, W) :-
   ancestor(Y, X, Z),
   W>=Z.
 
+person_exists(NAME) :-
+  man(NAME);
+  woman(NAME).
+
 add_person(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
   \+ man(NAME),
   \+ woman(NAME),
@@ -316,11 +326,11 @@ add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
 
 add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE) :-
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR),
-  assert(spouses(NAME, SPOUSE)).
+  assert(spouse(NAME, SPOUSE)).
 
 add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE) :-
   add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR),
-  assert(spouses(NAME, SPOUSE)).
+  assert(spouse(NAME, SPOUSE)).
 
 add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE, DEATH_YEAR) :-
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE),
@@ -344,10 +354,20 @@ menu :-
   read(CHOICE), nl,
   write('Enter name:'), nl,
   read(NAME), nl,
-  process(CHOICE, NAME),
+  maybe_process(CHOICE, NAME),
   CHOICE<7,
   write(NAME),
   write(' successfully added.'), nl, nl.
+
+maybe_process(X, NAME) :-
+  X<7,
+  person_exists(NAME),
+  !,
+  write('Person with this name already exists'),
+  fail.
+
+maybe_process(X, NAME) :-
+  process(X, NAME).
 
 process_(PARENT1, PARENT2, BIRTH_YEAR) :-
   write('Name of the first parent:'), nl,
@@ -369,13 +389,13 @@ process(3, NAME) :-
   process(1, NAME),
   write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
-  assert(spouses(NAME, SPOUSE_NAME)).
+  assert(spouse(NAME, SPOUSE_NAME)).
 
 process(4, NAME) :-
   process(2, NAME),
   write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
-  assert(spouses(NAME, SPOUSE_NAME)).
+  assert(spouse(NAME, SPOUSE_NAME)).
 
 process(5, NAME) :-
   process56(PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR),
@@ -393,18 +413,18 @@ process(7, NAME) :-
 process(8, NAME) :-
   write('Name: '),
   write(NAME), nl,
-  born(NAME, B),
-  write('Born: '),
-  write(B), nl,
-  parent(X, NAME),
-  write('Parents: '),
-  write(X), nl,
-  (spouses(NAME, S); spouses(S, NAME)),
-  write('Spouse: '),
-  write(S), nl,
-  death(NAME, D),
-  write('Death: '),
-  write(D).
+  (born(NAME, B),
+   write('Born: '),
+   write(B), nl);
+  (parent(X, NAME),
+   write('Parents: '),
+   write(X), nl);
+  (spouses(NAME, S),
+   write('Spouse: '),
+   write(S), nl);
+  (death(NAME, D),
+   write('Death: '),
+   write(D)).
 
 process56(PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR) :-
   process_(PARENT1, PARENT2, BIRTH_YEAR),
@@ -418,7 +438,7 @@ kill_person(NAME) :-
   retractall(parent(NAME, _)),
   retractall(man(NAME)),
   retractall(woman(NAME)),
-  retractall(spouses(NAME, _)),
-  retractall(spouses(_, NAME)),
+  retractall(spouse(NAME, _)),
+  retractall(spouse(_, NAME)),
   retractall(born(NAME, _)),
   retractall(death(NAME, _)).
