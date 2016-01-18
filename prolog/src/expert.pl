@@ -300,6 +300,8 @@ nth_or_less_degree_ancestor(X, Y, W) :-
   W>=Z.
 
 add_person(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
+  \+ man(NAME),
+  \+ woman(NAME),
   assert(parent(PARENT1, NAME)),
   assert(parent(PARENT2, NAME)),
   assert(born(NAME, BIRTH_YEAR)).
@@ -336,15 +338,18 @@ menu :-
   write('* 4. Add alive woman with spouse.'), nl,
   write('* 5. Add dead man with spouse.'), nl,
   write('* 6. Add dead woman with spouse.'), nl,
-  write('Please, select option number.'), nl,
+  write('* 7. Kill person.'), nl,
+  write('* 8. Print person.'), nl,
+  write('Please, select option number.'), nl, nl,
   read(CHOICE), nl,
+  write('Enter name:'), nl,
+  read(NAME), nl,
   process(CHOICE, NAME),
+  CHOICE<7,
   write(NAME),
   write(' successfully added.'), nl, nl.
 
-process_(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
-  write('Enter name:'), nl,
-  read(NAME), nl,
+process_(PARENT1, PARENT2, BIRTH_YEAR) :-
   write('Name of the first parent:'), nl,
   read(PARENT1), nl,
   write('Name of the second parent:'), nl,
@@ -353,11 +358,11 @@ process_(NAME, PARENT1, PARENT2, BIRTH_YEAR) :-
   read(BIRTH_YEAR), nl.
 
 process(1, NAME) :-
-  process_(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  process_(PARENT1, PARENT2, BIRTH_YEAR),
   add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR).
 
 process(2, NAME) :-
-  process_(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  process_(PARENT1, PARENT2, BIRTH_YEAR),
   add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR).
 
 process(3, NAME) :-
@@ -373,19 +378,48 @@ process(4, NAME) :-
   assert(spouses(NAME, SPOUSE_NAME)).
 
 process(5, NAME) :-
-  process_(NAME, PARENT1, PARENT2, BIRTH_YEAR),
+  process56(PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR),
+  add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
+
+process(6, NAME) :-
+  process56(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR),
+  add_woman(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
+
+process(7, NAME) :-
+  write('Who do you want to kill?'), nl,
+  read(NAME), nl,
+  kill_person(NAME).
+
+process(8, NAME) :-
+  write('Name: '),
+  write(NAME), nl,
+  born(NAME, B),
+  write('Born: '),
+  write(B), nl,
+  parent(X, NAME),
+  write('Parents: '),
+  write(X), nl,
+  spouses(NAME, S),
+  %spouses(S, NAME), % TODO problem here
+  write('Spouse: '),
+  write(S), nl,
+  death(NAME, D),
+  write('Death: '),
+  write(D).
+
+process56(PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR) :-
+  process_(PARENT1, PARENT2, BIRTH_YEAR),
   write('Name of the spouse:'), nl,
   read(SPOUSE_NAME), nl,
   write('Death year:'), nl,
-  read(DEATH_YEAR), nl,
-  add_man(NAME, PARENT1, PARENT2, BIRTH_YEAR, SPOUSE_NAME, DEATH_YEAR).
+  read(DEATH_YEAR), nl.
 
-remove_person(NAME) :-
-  retract(parent(_, NAME)),
-  retract(parent(NAME, _)),
-  retract(man(NAME)),
-  retract(woman(NAME)),
-  retract(spouses(NAME, _)),
-  retract(spouses(_, NAME)),
-  retract(born(NAME, _)),
-  retract(death(NAME, _)).
+kill_person(NAME) :-
+  retractall(parent(_, NAME)),
+  retractall(parent(NAME, _)),
+  retractall(man(NAME)),
+  retractall(woman(NAME)),
+  retractall(spouses(NAME, _)),
+  retractall(spouses(_, NAME)),
+  retractall(born(NAME, _)),
+  retractall(death(NAME, _)).
